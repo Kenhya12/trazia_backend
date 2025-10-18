@@ -4,6 +4,8 @@ import com.trazia.trazia_project.dto.product.*;
 import com.trazia.trazia_project.entity.User;
 import com.trazia.trazia_project.entity.product.Product;
 import com.trazia.trazia_project.entity.product.ProductNutriments;
+import com.trazia.trazia_project.dto.product.NutrimentsDTO;
+import com.trazia.trazia_project.dto.product.ProductDTO;
 
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -88,6 +90,23 @@ public class ProductMapper {
                 .build();
     }
 
+    public NutrimentsDTO toNutrimentsDTO(ProductNutriments nutriments) {
+        if (nutriments == null) {
+            return null;
+        }
+        return NutrimentsDTO.builder()
+                .calories(toDouble(nutriments.getCalories()))
+                .protein(toDouble(nutriments.getProtein()))
+                .carbohydrates(toDouble(nutriments.getCarbohydrates()))
+                .sugar(toDouble(nutriments.getSugars()))
+                .fat(toDouble(nutriments.getFat()))
+                .saturatedFat(toDouble(nutriments.getSaturatedFat()))
+                .fiber(toDouble(nutriments.getFiber()))
+                .sodium(toDouble(nutriments.getSodium()))
+                .salt(toDouble(nutriments.getSalt()))
+                .build();
+    }
+
     // ==================== RESPONSE CONVERSIONS ====================
 
     /**
@@ -113,7 +132,7 @@ public class ProductMapper {
                 .thumbnailUrl(thumbnailUrl)
                 .imagePath(product.getImagePath())
                 .thumbnailPath(product.getThumbnailPath())
-                .nutriments(product.getNutriments())
+                .nutriments(toNutrimentsDTO(product.getNutriments()))
                 .servingSizeGrams(product.getServingSizeGrams())
                 .servingDescription(product.getServingDescription())
                 .labelingRegion(product.getLabelingRegion())
@@ -142,6 +161,11 @@ public class ProductMapper {
                     .protein(toDouble(product.getNutriments().getProtein()))
                     .carbohydrates(toDouble(product.getNutriments().getCarbohydrates()))
                     .fat(toDouble(product.getNutriments().getFat()))
+                    .sugar(toDouble(product.getNutriments().getSugars()))
+                    .saturatedFat(toDouble(product.getNutriments().getSaturatedFat()))
+                    .fiber(toDouble(product.getNutriments().getFiber()))
+                    .sodium(toDouble(product.getNutriments().getSodium()))
+                    .salt(toDouble(product.getNutriments().getSalt()))
                     .build();
         }
 
@@ -183,5 +207,15 @@ public class ProductMapper {
      */
     private Double toDouble(BigDecimal value) {
         return value != null ? value.doubleValue() : null;
+    }
+
+    public ProductDTO toDTO(Product product) {
+        if (product == null) return null;
+        return ProductDTO.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .brand(product.getBrand())
+                .category(product.getCategory())
+                .build();
     }
 }

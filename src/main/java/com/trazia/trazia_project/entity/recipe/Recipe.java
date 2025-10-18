@@ -59,7 +59,7 @@ public class Recipe {
     @NotNull(message = "Yield weight is required")
     @Positive(message = "Yield weight must be positive")
     @Column(name = "yield_weight_grams", nullable = false)
-    private Integer yieldWeightGrams;
+    private Double yieldWeightGrams;
 
     /**
      * Descripción opcional del rendimiento (ej: "8 porciones", "12 galletas")

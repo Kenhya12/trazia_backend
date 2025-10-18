@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.trazia.trazia_project.dto.product.NutrimentsDTO;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -41,6 +42,7 @@ public class RecipeResponse {
     /**
      * Lista de ingredientes con sus detalles
      */
+    @Builder.Default
     private List<RecipeIngredientResponse> ingredients = new ArrayList<>();
 
     /**
@@ -83,5 +85,6 @@ public class RecipeResponse {
      * ID del usuario propietario de la receta
      */
     private Long userId;
-}
 
+    private NutrimentsDTO calculatedNutrition;
+}

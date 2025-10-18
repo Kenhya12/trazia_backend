@@ -14,6 +14,9 @@ import com.trazia.trazia_project.entity.recipe.Recipe;
 
 @Repository
 public interface RecipeRepository extends JpaRepository<Recipe, Long> {
+        Optional<Recipe> findByIdAndUserId(Long id, Long userId);
+
+        Page<Recipe> findByUserId(Long userId, Pageable pageable);
 
         /**
          * Encuentra todas las recetas de un usuario (no eliminadas)

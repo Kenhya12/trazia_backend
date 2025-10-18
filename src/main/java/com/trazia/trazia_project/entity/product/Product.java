@@ -123,6 +123,13 @@ public class Product {
     @Column(name = "serving_size_grams")
     private Integer servingSizeGrams;
 
+/**
+ * Costo por unidad (por kg) del producto
+ * Usado para calcular el costo total de recetas
+ */
+@Column(name = "cost_per_unit")
+private Double costPerUnit;
+
     /**
      * Descripción opcional del tamaño de porción (ej: "1 taza", "1 rebanada")
      */
