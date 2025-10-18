@@ -1,0 +1,25 @@
+# ============================================
+# CONFIGURACIÓN POSTGRESQL - PRODUCCIÓN
+# ============================================
+
+# Base de datos PostgreSQL
+spring.datasource.url=jdbc:postgresql://localhost:5432/trazia_db
+spring.datasource.username=postgres
+spring.datasource.password=tu_password
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+# JPA Configuration
+spring.jpa.hibernate.ddl-auto=validate
+spring.jpa.show-sql=false
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation=true
+
+# Connection pool
+spring.datasource.hikari.maximum-pool-size=10
+spring.datasource.hikari.minimum-idle=2
+spring.datasource.hikari.idle-timeout=30000
+spring.datasource.hikari.connection-timeout=20000
+spring.datasource.hikari.max-lifetime=120000
+
+# Seguridad habilitada
+# (Remover la exclusión de seguridad cuando la configures)
