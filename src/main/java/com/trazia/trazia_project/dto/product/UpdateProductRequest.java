@@ -1,7 +1,8 @@
 package com.trazia.trazia_project.dto.product;
 
 import com.trazia.trazia_project.entity.LabelingRegion;
-import com.trazia.trazia_project.entity.ProductCategory;
+import com.trazia.trazia_project.entity.product.ProductCategory;
+
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

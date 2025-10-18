@@ -1,21 +1,23 @@
 package com.trazia.trazia_project.service;
 
-import com.trazia.trazia_project.dto.AuthResponse;
-import com.trazia.trazia_project.dto.LoginRequest;
-import com.trazia.trazia_project.dto.RegisterRequest;
-import com.trazia.trazia_project.entity.User;
-import com.trazia.trazia_project.exception.UserAlreadyExistsException;
-import com.trazia.trazia_project.exception.InvalidCredentialsException;
-import com.trazia.trazia_project.repository.UserRepository;
-import com.trazia.trazia_project.security.JwtTokenProvider;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.trazia.trazia_project.dto.AuthResponse;
+import com.trazia.trazia_project.dto.LoginRequest;
+import com.trazia.trazia_project.dto.RegisterRequest;
+import com.trazia.trazia_project.entity.User;
+import com.trazia.trazia_project.exception.InvalidCredentialsException;
+import com.trazia.trazia_project.exception.UserAlreadyExistsException;
+import com.trazia.trazia_project.repository.UserRepository;
+import com.trazia.trazia_project.security.JwtTokenProvider;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor

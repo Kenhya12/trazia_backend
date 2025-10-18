@@ -1,4 +1,4 @@
-package com.trazia.trazia_project.entity;
+package com.trazia.trazia_project.entity.recipe;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -10,6 +10,8 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.trazia.trazia_project.entity.User;
 
 /**
  * Entidad para recetas personalizadas del usuario

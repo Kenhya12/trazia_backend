@@ -1,4 +1,6 @@
-package com.trazia.trazia_project.entity;
+package com.trazia.trazia_project.entity.recipe;
+
+import com.trazia.trazia_project.entity.product.Product;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;

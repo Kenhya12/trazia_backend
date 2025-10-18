@@ -1,4 +1,4 @@
-package com.trazia.trazia_project.entity;
+package com.trazia.trazia_project.entity.product;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -9,6 +9,11 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.trazia.trazia_project.entity.LabelingRegion;
+import com.trazia.trazia_project.entity.User;
+import com.trazia.trazia_project.entity.recipe.Recipe;
+import com.trazia.trazia_project.entity.recipe.RecipeIngredient;
 
 /**
  * Entidad para productos personalizados del usuario
@@ -50,19 +55,31 @@ public class Product {
     @ToString.Exclude
     private List<RecipeIngredient> recipeIngredients = new ArrayList<>();
 
+    /**
+     * Nombre del producto
+     */
     @NotBlank(message = "Product name is required")
     @Size(min = 3, max = 150, message = "Product name must be between 3 and 150 characters")
     @Column(nullable = false, length = 150)
     private String name;
 
+    /**
+     * Descripción opcional del producto
+     */
     @Size(max = 1000, message = "Description cannot exceed 1000 characters")
     @Column(length = 1000)
     private String description;
 
+    /**
+     * Marca opcional del producto
+     */
     @Size(max = 100, message = "Brand name cannot exceed 100 characters")
     @Column(length = 100)
     private String brand;
 
+    /**
+     * Categoría del producto
+     */
     @NotNull(message = "Category is required")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
@@ -99,28 +116,48 @@ public class Product {
     @Embedded
     private ProductNutriments nutriments;
 
+    /**
+     * Tamaño de porción en gramos (opcional)
+     * Usado para conversión de nutrimentos
+     */
     @Column(name = "serving_size_grams")
     private Integer servingSizeGrams;
 
+    /**
+     * Descripción opcional del tamaño de porción (ej: "1 taza", "1 rebanada")
+     */
     @Size(max = 100, message = "Serving description cannot exceed 100 characters")
     @Column(name = "serving_description", length = 100)
     private String servingDescription;
 
+    /**
+     * Región de etiquetado nutricional
+     */
     @Enumerated(EnumType.STRING)
     @Builder.Default
     @Column(name = "labeling_region", length = 10, nullable = false)
     private LabelingRegion labelingRegion = LabelingRegion.EU;
 
+    /**
+    * Indicador de eliminación lógica
+    */
     @Builder.Default
     @Column(nullable = false)
     private Boolean deleted = false;
 
+    /**
+     * Timestamps de creación y actualización
+     */
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    /**
+     * Timestamps de creación y actualización
+     */
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -239,4 +276,18 @@ public class Product {
                 .allMatch(recipe -> recipe.getDeleted());
     }
 
+    /**
+     * Verifica si se puede eliminar el producto de forma segura
+     * (solo si no está en uso en recetas activas)
+     */
+    public boolean canBeDeletedSafely() {
+        if (recipeIngredients == null || recipeIngredients.isEmpty()) {
+            return true;
+        }
+
+        // Permitir eliminación solo si todas las recetas que lo usan están eliminadas
+        return recipeIngredients.stream()
+                .map(RecipeIngredient::getRecipe)
+                .allMatch(Recipe::getDeleted);
+    }
 }

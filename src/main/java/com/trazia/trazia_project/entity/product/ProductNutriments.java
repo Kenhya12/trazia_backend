@@ -1,4 +1,4 @@
-package com.trazia.trazia_project.entity;
+package com.trazia.trazia_project.entity.product;
 
 import jakarta.persistence.Embeddable;
 import jakarta.validation.constraints.DecimalMin;

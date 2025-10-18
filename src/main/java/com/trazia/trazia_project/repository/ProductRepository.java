@@ -1,7 +1,8 @@
 package com.trazia.trazia_project.repository;
 
-import com.trazia.trazia_project.entity.Product;
-import com.trazia.trazia_project.entity.ProductCategory;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,8 +10,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import com.trazia.trazia_project.entity.product.Product;
+import com.trazia.trazia_project.entity.product.ProductCategory;
 
 /**
  * Repositorio de Productos con queries optimizadas

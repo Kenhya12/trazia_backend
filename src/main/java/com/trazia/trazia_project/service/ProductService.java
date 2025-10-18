@@ -1,9 +1,9 @@
 package com.trazia.trazia_project.service;
 
 import com.trazia.trazia_project.dto.product.*;
-import com.trazia.trazia_project.entity.Product;
-import com.trazia.trazia_project.entity.ProductCategory;
 import com.trazia.trazia_project.entity.User;
+import com.trazia.trazia_project.entity.product.Product;
+import com.trazia.trazia_project.entity.product.ProductCategory;
 import com.trazia.trazia_project.exception.DuplicateProductException;
 import com.trazia.trazia_project.exception.ProductNotFoundException;
 import com.trazia.trazia_project.exception.ResourceNotFoundException;
@@ -16,7 +16,6 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;

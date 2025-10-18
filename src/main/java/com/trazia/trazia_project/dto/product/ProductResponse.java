@@ -2,8 +2,9 @@ package com.trazia.trazia_project.dto.product;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.trazia.trazia_project.entity.LabelingRegion;
-import com.trazia.trazia_project.entity.ProductCategory;
-import com.trazia.trazia_project.entity.ProductNutriments;
+import com.trazia.trazia_project.entity.product.ProductCategory;
+import com.trazia.trazia_project.entity.product.ProductNutriments;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

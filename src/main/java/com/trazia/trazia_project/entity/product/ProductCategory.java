@@ -1,4 +1,4 @@
-package com.trazia.trazia_project.entity;
+package com.trazia.trazia_project.entity.product;
 
 public enum ProductCategory {
     DAIRY("Dairy Products"),

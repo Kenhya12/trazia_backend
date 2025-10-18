@@ -1,9 +1,10 @@
 package com.trazia.trazia_project.mapper;
 
 import com.trazia.trazia_project.dto.product.*;
-import com.trazia.trazia_project.entity.Product;
-import com.trazia.trazia_project.entity.ProductNutriments;
 import com.trazia.trazia_project.entity.User;
+import com.trazia.trazia_project.entity.product.Product;
+import com.trazia.trazia_project.entity.product.ProductNutriments;
+
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
