@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import com.trazia.trazia_project.entity.product.ProductCategory;
 
 @Data
 @NoArgsConstructor
@@ -19,8 +20,10 @@ public class ProductDTO {
     private String description;
     private String imagePath;
     private String thumbnailPath;
-    private String imageUrl;          // URL completa para el frontend
-    private String thumbnailUrl;      // URL completa del thumbnail
+    private String imageUrl;
+    private String thumbnailUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private ProductCategory category;
+    private NutrimentsDTO nutriments; // ✅ Añadido campo para nutrición
 }

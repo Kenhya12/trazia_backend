@@ -52,13 +52,7 @@ public class AuthService {
         User savedUser = userRepository.save(user);
         log.info("User registered successfully with email: {}", savedUser.getEmail());
 
-        String token = jwtTokenProvider.generateToken(savedUser);
-
-        return AuthResponse.builder()
-                .token(token)
-                .username(savedUser.getUsername())
-                .email(savedUser.getEmail())
-                .build();
+        return buildAuthResponse(savedUser);
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -77,17 +71,20 @@ public class AuthService {
 
             log.info("User authenticated successfully: {}", user.getEmail());
 
-            String token = jwtTokenProvider.generateToken(user);
-
-            return AuthResponse.builder()
-                    .token(token)
-                    .username(user.getUsername())
-                    .email(user.getEmail())
-                    .build();
+            return buildAuthResponse(user);
 
         } catch (Exception e) {
             log.error("Authentication failed for email: {}", request.getEmail());
             throw new InvalidCredentialsException("Invalid email or password");
         }
+    }
+
+    private AuthResponse buildAuthResponse(User user) {
+        String token = jwtTokenProvider.generateToken(user);
+        return AuthResponse.builder()
+                .token(token)
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .build();
     }
 }

@@ -1,9 +1,13 @@
 package com.trazia.trazia_project.service;
+
 import com.trazia.trazia_project.entity.User;
 
 import com.trazia.trazia_project.dto.product.NutrimentsDTO;
+import com.trazia.trazia_project.dto.product.ProductResponse;
+import com.trazia.trazia_project.dto.product.ProductDTO;
 import com.trazia.trazia_project.dto.recipe.*;
 import com.trazia.trazia_project.entity.product.Product;
+import com.trazia.trazia_project.entity.product.ProductNutriments;
 import com.trazia.trazia_project.entity.recipe.Recipe;
 import com.trazia.trazia_project.entity.recipe.RecipeIngredient;
 import com.trazia.trazia_project.exception.ResourceNotFoundException;
@@ -23,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.lang.Integer;
 
 @Service
 @RequiredArgsConstructor
@@ -44,7 +47,7 @@ public class RecipeService {
                                 .name(request.getName())
                                 .description(request.getDescription())
                                 .yieldWeightGrams(request.getYieldWeightGrams())
-                                .user(new User(userId))
+                                .user(User.builder().id(userId).build())
                                 .createdAt(LocalDateTime.now())
                                 .updatedAt(LocalDateTime.now())
                                 .build();
@@ -131,11 +134,13 @@ public class RecipeService {
                                         .orElseThrow(() -> new ResourceNotFoundException(
                                                         "Product not found with id: " + req.getProductId()));
 
+                        Integer displayOrderInt = req.getDisplayOrder() != null ? req.getDisplayOrder().intValue() : i;
+
                         RecipeIngredient ingredient = RecipeIngredient.builder()
                                         .recipe(recipe)
                                         .product(product)
                                         .quantityGrams(req.getQuantityGrams())
-                                        .displayOrder(req.getDisplayOrder() != null ? req.getDisplayOrder() : i)
+                                        .displayOrder(displayOrderInt)
                                         .build();
 
                         ingredients.add(recipeIngredientRepository.save(ingredient));
@@ -152,11 +157,13 @@ public class RecipeService {
                 NutrimentsDTO nutritionPer100g = nutritionConversionService.calculatePer100g(
                                 totalNutrients, recipe.getYieldWeightGrams());
 
-                double costPerGram = totalCost / recipe.getYieldWeightGrams();
-                double costPer100g = costPerGram * 100;
+                double yieldWeight = recipe.getYieldWeightGrams() != null ? recipe.getYieldWeightGrams().doubleValue()
+                                : 0.0;
+                double costPerGram = yieldWeight != 0.0 ? totalCost / yieldWeight : 0.0;
+                double costPer100g = costPerGram * 100.0;
 
                 double yieldLossPercentage = calculateYieldLossPercentage(totalIngredientsWeight,
-                                recipe.getYieldWeightGrams());
+                                yieldWeight);
 
                 List<RecipeIngredientResponse> ingredientResponses = recipe.getIngredients().stream()
                                 .sorted(Comparator.comparing(RecipeIngredient::getDisplayOrder))
@@ -168,7 +175,9 @@ public class RecipeService {
                                 .id(recipe.getId())
                                 .name(recipe.getName())
                                 .description(recipe.getDescription())
-                                .yieldWeightGrams(recipe.getYieldWeightGrams().doubleValue())
+                                .yieldWeightGrams(recipe.getYieldWeightGrams() != null
+                                                ? recipe.getYieldWeightGrams().doubleValue()
+                                                : 0.0)
                                 .ingredients(ingredientResponses)
                                 .totalCost(totalCost)
                                 .costPerGram(costPerGram)
@@ -188,19 +197,21 @@ public class RecipeService {
                                 .sum();
         }
 
+        private double calculateIngredientCost(RecipeIngredient ingredient) {
+                Product product = ingredient.getProduct();
+
+                if (product.getCostPerUnit() == null) {
+                        return 0.0;
+                }
+
+                double quantityKg = ingredient.getQuantityGrams() / 1000.0;
+                return quantityKg * product.getCostPerUnit();
+        }
+
         private double calculateTotalCost(Recipe recipe) {
                 return recipe.getIngredients().stream()
                                 .mapToDouble(this::calculateIngredientCost)
                                 .sum();
-        }
-
-        private double calculateIngredientCost(RecipeIngredient ingredient) {
-                Product product = ingredient.getProduct();
-                if (product.getCostPerUnit() == null) {
-                        return 0.0;
-                }
-                double quantityKg = ingredient.getQuantityGrams() / 1000.0;
-                return quantityKg * product.getCostPerUnit();
         }
 
         private double calculateYieldLossPercentage(double totalIngredientsWeight, double yieldWeightGrams) {
@@ -208,19 +219,23 @@ public class RecipeService {
                         return 0.0;
                 }
                 double loss = totalIngredientsWeight - yieldWeightGrams;
-                return (loss / totalIngredientsWeight) * 100;
+                return (loss / totalIngredientsWeight) * 100.0;
         }
 
         private RecipeIngredientResponse buildIngredientResponse(RecipeIngredient ingredient,
                         double totalIngredientsWeight, double totalCost) {
-                ProductDTO productDTO = productMapper.toDTO(ingredient.getProduct());
+
+                // CORREGIDO: Usar toProductDTO en lugar de toResponse
+                ProductDTO productDTO = productMapper.toProductDTO(ingredient.getProduct());
                 double ingredientCost = calculateIngredientCost(ingredient);
-                double percentageOfTotal = (ingredient.getQuantityGrams() / totalIngredientsWeight) * 100;
+                double percentageOfTotal = totalIngredientsWeight != 0
+                                ? (ingredient.getQuantityGrams().doubleValue() / totalIngredientsWeight) * 100.0
+                                : 0.0;
 
                 return RecipeIngredientResponse.builder()
                                 .id(ingredient.getId())
-                                .product(productDTO)
-                                .quantityGrams(ingredient.getQuantityGrams())
+                                .product(productDTO) // ✅ Ahora usa ProductDTO con nutriments
+                                .quantityGrams(ingredient.getQuantityGrams().doubleValue())
                                 .displayOrder(ingredient.getDisplayOrder())
                                 .ingredientCost(ingredientCost)
                                 .percentageOfTotal(percentageOfTotal)
@@ -228,19 +243,33 @@ public class RecipeService {
         }
 
         private NutrimentsDTO calculateTotalNutrients(Recipe recipe) {
-                // Asumiendo que NutrimentsDTO tiene un constructor vacío
                 NutrimentsDTO totalNutrients = new NutrimentsDTO();
 
                 for (RecipeIngredient ingredient : recipe.getIngredients()) {
                         Product product = ingredient.getProduct();
-                        NutrimentsDTO nutrients = productMapper.toNutrimentsDTO(product.getNutriments());
-                        Integer servingSize = null;
-                        if (product.getServingSizeGrams() != null) {
-                                servingSize = product.getServingSizeGrams();
+
+                        // Obtener ProductNutriments del producto (ENTIDAD)
+                        com.trazia.trazia_project.entity.product.ProductNutriments productNutriments = product
+                                        .getNutriments();
+                        if (productNutriments == null) {
+                                continue;
                         }
 
+                        // Convertir a NutrimentsDTO
+                        NutrimentsDTO nutrients = productMapper.toNutrimentsDTO(productNutriments);
+
+                        // Obtener servingSize como Double
+                        Double servingSize = product.getServingSizeGrams() != null
+                                        ? product.getServingSizeGrams().doubleValue()
+                                        : null;
+
+                        // Usar el valor Double de quantityGrams
+                        Double quantityGrams = ingredient.getQuantityGrams() != null
+                                        ? ingredient.getQuantityGrams().doubleValue()
+                                        : 0.0;
+
                         NutrimentsDTO usedNutrients = nutritionConversionService.normalizeNutrients(
-                                        nutrients, servingSize, ingredient.getQuantityGrams());
+                                        nutrients, servingSize, quantityGrams);
 
                         totalNutrients = nutritionConversionService.sumNutrients(totalNutrients, usedNutrients);
                 }
@@ -248,11 +277,22 @@ public class RecipeService {
         }
 
         private RecipeSummaryResponse buildRecipeSummaryResponse(Recipe recipe) {
+                double totalCost = calculateTotalCost(recipe);
+                double yieldWeight = recipe.getYieldWeightGrams() != null ? recipe.getYieldWeightGrams().doubleValue()
+                                : 0.0;
+                double costPer100g = yieldWeight != 0.0 ? (totalCost / yieldWeight) * 100.0 : 0.0;
+                int ingredientCount = recipe.getIngredients() != null ? recipe.getIngredients().size() : 0;
+
                 return RecipeSummaryResponse.builder()
                                 .id(recipe.getId())
                                 .name(recipe.getName())
                                 .description(recipe.getDescription())
-                                .yieldWeightGrams(recipe.getYieldWeightGrams().doubleValue())
+                                .yieldWeightGrams(recipe.getYieldWeightGrams())
+                                .totalCost(totalCost)
+                                .costPer100g(costPer100g)
+                                .ingredientCount(ingredientCount)
+                                .createdAt(recipe.getCreatedAt())
+                                .updatedAt(recipe.getUpdatedAt())
                                 .build();
         }
 }

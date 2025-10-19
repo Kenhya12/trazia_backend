@@ -1,22 +1,46 @@
 package com.trazia.trazia_project.dto.product;
 
-import lombok.Builder;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class NutrimentsDTO {
-    private Double calories;
-    private Double energyJoules;
-    private Double fat;
-    private Double saturatedFat;
+    
+    @JsonProperty("energy-kcal_100g")
+    private Double energyKcal;
+
+    @JsonProperty("proteins_100g")
+    private Double proteins;
+
+    @JsonProperty("carbohydrates_100g")
     private Double carbohydrates;
-    private Double sugars;
+
+    @JsonProperty("fat_100g")
+    private Double fat;
+
+    @JsonProperty("fiber_100g")
     private Double fiber;
+
+    @JsonProperty("sodium_100g")
+    private Double sodium;
+
+    @JsonProperty("sugars_100g")
+    private Double sugars;
+
+    @JsonProperty("saturated-fat_100g")
+    private Double saturatedFat;
+
+    @JsonProperty("unsaturated-fat_100g")
+    private Double unsaturatedFat;
+
+    // Campos adicionales para compatibilidad
+    private Double calories;
     private Double protein;
-    private Double salt;
+
+    // Constructor vacío importante
+    public NutrimentsDTO() {
+        // Inicializar con valores por defecto si es necesario
+    }
 }

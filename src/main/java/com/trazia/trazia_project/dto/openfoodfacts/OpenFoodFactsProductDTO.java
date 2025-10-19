@@ -2,6 +2,8 @@ package com.trazia.trazia_project.dto.openfoodfacts;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.trazia.trazia_project.dto.product.NutrimentsDTO;
+
 import lombok.Data;
 
 @Data

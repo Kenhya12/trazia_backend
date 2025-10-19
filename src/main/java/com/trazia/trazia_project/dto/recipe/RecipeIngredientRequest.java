@@ -27,7 +27,7 @@ public class RecipeIngredientRequest {
      */
     @NotNull(message = "La cantidad es obligatoria")
     @Positive(message = "La cantidad debe ser mayor a 0")
-    private Double quantityGrams;
+    private Integer quantityGrams;
 
     /**
      * Orden de visualización del ingrediente en la lista (opcional)
@@ -35,4 +35,3 @@ public class RecipeIngredientRequest {
      */
     private Integer displayOrder;
 }
-

@@ -6,105 +6,86 @@ import org.springframework.stereotype.Service;
 @Service
 public class NutritionConversionService {
 
-    private static final double GRAMS_TO_OUNCES = 0.03527396;
-    private static final double OUNCES_TO_GRAMS = 28.3495;
-    private static final double CALORIES_TO_JOULES = 4.184;
-
-    /**
-     * Convierte gramos a onzas
-     */
-    public double gramsToOunces(double grams) {
-        return grams * GRAMS_TO_OUNCES;
-    }
-
-    /**
-     * Convierte onzas a gramos
-     */
-    public double ouncesToGrams(double ounces) {
-        return ounces * OUNCES_TO_GRAMS;
-    }
-
-    /**
-     * Convierte calorías a julios
-     */
-    public double caloriesToJoules(double calories) {
-        return calories * CALORIES_TO_JOULES;
-    }
-
-    /**
-     * Convierte julios a calorías
-     */
-    public double joulesToCalories(double joules) {
-        return joules / CALORIES_TO_JOULES;
-    }
-
-    /**
-     * Normaliza valores nutricionales para cálculo ponderado:
-     * Ajusta según tamaño porción US o base 100g EU, multiplicado por cantidad usada.
-     */
-    public NutrimentsDTO normalizeNutrients(
-            NutrimentsDTO nutriments,
-            Integer servingSizeGrams,
-            double amountInGrams) {
-
-        double factor;
-        if (servingSizeGrams != null && servingSizeGrams > 0) {
-            factor = amountInGrams / servingSizeGrams;
-        } else {
-            factor = amountInGrams / 100.0;
+    public NutrimentsDTO calculatePer100g(NutrimentsDTO totalNutrients, Double yieldWeightGrams) {
+        if (totalNutrients == null || yieldWeightGrams == null || yieldWeightGrams == 0) {
+            return new NutrimentsDTO();
         }
-
-        return NutrimentsDTO.builder()
-                .calories(nutriments.getCalories() != null ? nutriments.getCalories() * factor : 0)
-                .energyJoules(nutriments.getEnergyJoules() != null ? nutriments.getEnergyJoules() * factor : 0)
-                .fat(nutriments.getFat() != null ? nutriments.getFat() * factor : 0)
-                .saturatedFat(nutriments.getSaturatedFat() != null ? nutriments.getSaturatedFat() * factor : 0)
-                .carbohydrates(nutriments.getCarbohydrates() != null ? nutriments.getCarbohydrates() * factor : 0)
-                .sugars(nutriments.getSugars() != null ? nutriments.getSugars() * factor : 0)
-                .fiber(nutriments.getFiber() != null ? nutriments.getFiber() * factor : 0)
-                .protein(nutriments.getProtein() != null ? nutriments.getProtein() * factor : 0)
-                .salt(nutriments.getSalt() != null ? nutriments.getSalt() * factor : 0)
-                .build();
-    }
-
-    /**
-     * Calcula valor nutricional por 100g basándose en total lote y peso final.
-     */
-    public NutrimentsDTO calculatePer100g(NutrimentsDTO totalNutrients, double yieldWeightGrams) {
-        if (yieldWeightGrams == 0) {
-            return NutrimentsDTO.builder().build();
-        }
+        
+        NutrimentsDTO per100g = new NutrimentsDTO();
         double factor = 100.0 / yieldWeightGrams;
-        return NutrimentsDTO.builder()
-                .calories(totalNutrients.getCalories() * factor)
-                .energyJoules(totalNutrients.getEnergyJoules() * factor)
-                .fat(totalNutrients.getFat() * factor)
-                .saturatedFat(totalNutrients.getSaturatedFat() * factor)
-                .carbohydrates(totalNutrients.getCarbohydrates() * factor)
-                .sugars(totalNutrients.getSugars() * factor)
-                .fiber(totalNutrients.getFiber() * factor)
-                .protein(totalNutrients.getProtein() * factor)
-                .salt(totalNutrients.getSalt() * factor)
-                .build();
+        
+        // Convertir todos los valores a por 100g
+        if (totalNutrients.getEnergyKcal() != null) 
+            per100g.setEnergyKcal(totalNutrients.getEnergyKcal() * factor);
+        if (totalNutrients.getProtein() != null) 
+            per100g.setProtein(totalNutrients.getProtein() * factor);
+        if (totalNutrients.getCarbohydrates() != null) 
+            per100g.setCarbohydrates(totalNutrients.getCarbohydrates() * factor);
+        if (totalNutrients.getFat() != null) 
+            per100g.setFat(totalNutrients.getFat() * factor);
+        if (totalNutrients.getFiber() != null) 
+            per100g.setFiber(totalNutrients.getFiber() * factor);
+        if (totalNutrients.getSugars() != null) 
+            per100g.setSugars(totalNutrients.getSugars() * factor);
+        if (totalNutrients.getSodium() != null) 
+            per100g.setSodium(totalNutrients.getSodium() * factor);
+        if (totalNutrients.getSaturatedFat() != null) 
+            per100g.setSaturatedFat(totalNutrients.getSaturatedFat() * factor);
+        
+        return per100g;
     }
 
-    /**
-     * Suma dos objetos NutrimentsDTO.
-     */
-    public NutrimentsDTO sumNutrients(NutrimentsDTO a, NutrimentsDTO b) {
-        if (a == null) return b;
-        if (b == null) return a;
+    public NutrimentsDTO normalizeNutrients(NutrimentsDTO nutrients, Double servingSize, Double quantityGrams) {
+        if (nutrients == null) return new NutrimentsDTO();
+        
+        double factor;
+        if (servingSize != null && servingSize > 0) {
+            factor = quantityGrams / servingSize;
+        } else {
+            factor = quantityGrams / 100.0;
+        }
+        
+        NutrimentsDTO normalized = new NutrimentsDTO();
+        if (nutrients.getEnergyKcal() != null) 
+            normalized.setEnergyKcal(nutrients.getEnergyKcal() * factor);
+        if (nutrients.getProtein() != null) 
+            normalized.setProtein(nutrients.getProtein() * factor);
+        if (nutrients.getCarbohydrates() != null) 
+            normalized.setCarbohydrates(nutrients.getCarbohydrates() * factor);
+        if (nutrients.getFat() != null) 
+            normalized.setFat(nutrients.getFat() * factor);
+        if (nutrients.getFiber() != null) 
+            normalized.setFiber(nutrients.getFiber() * factor);
+        if (nutrients.getSugars() != null) 
+            normalized.setSugars(nutrients.getSugars() * factor);
+        if (nutrients.getSodium() != null) 
+            normalized.setSodium(nutrients.getSodium() * factor);
+        if (nutrients.getSaturatedFat() != null) 
+            normalized.setSaturatedFat(nutrients.getSaturatedFat() * factor);
+        
+        return normalized;
+    }
 
-        return NutrimentsDTO.builder()
-                .calories((a.getCalories() != null ? a.getCalories() : 0) + (b.getCalories() != null ? b.getCalories() : 0))
-                .energyJoules((a.getEnergyJoules() != null ? a.getEnergyJoules() : 0) + (b.getEnergyJoules() != null ? b.getEnergyJoules() : 0))
-                .fat((a.getFat() != null ? a.getFat() : 0) + (b.getFat() != null ? b.getFat() : 0))
-                .saturatedFat((a.getSaturatedFat() != null ? a.getSaturatedFat() : 0) + (b.getSaturatedFat() != null ? b.getSaturatedFat() : 0))
-                .carbohydrates((a.getCarbohydrates() != null ? a.getCarbohydrates() : 0) + (b.getCarbohydrates() != null ? b.getCarbohydrates() : 0))
-                .sugars((a.getSugars() != null ? a.getSugars() : 0) + (b.getSugars() != null ? b.getSugars() : 0))
-                .fiber((a.getFiber() != null ? a.getFiber() : 0) + (b.getFiber() != null ? b.getFiber() : 0))
-                .protein((a.getProtein() != null ? a.getProtein() : 0) + (b.getProtein() != null ? b.getProtein() : 0))
-                .salt((a.getSalt() != null ? a.getSalt() : 0) + (b.getSalt() != null ? b.getSalt() : 0))
-                .build();
+    public NutrimentsDTO sumNutrients(NutrimentsDTO total, NutrimentsDTO toAdd) {
+        if (total == null) return toAdd;
+        if (toAdd == null) return total;
+        
+        NutrimentsDTO result = new NutrimentsDTO();
+        
+        result.setEnergyKcal(addNullable(total.getEnergyKcal(), toAdd.getEnergyKcal()));
+        result.setProtein(addNullable(total.getProtein(), toAdd.getProtein()));
+        result.setCarbohydrates(addNullable(total.getCarbohydrates(), toAdd.getCarbohydrates()));
+        result.setFat(addNullable(total.getFat(), toAdd.getFat()));
+        result.setFiber(addNullable(total.getFiber(), toAdd.getFiber()));
+        result.setSugars(addNullable(total.getSugars(), toAdd.getSugars()));
+        result.setSodium(addNullable(total.getSodium(), toAdd.getSodium()));
+        result.setSaturatedFat(addNullable(total.getSaturatedFat(), toAdd.getSaturatedFat()));
+        
+        return result;
+    }
+    
+    private Double addNullable(Double a, Double b) {
+        if (a == null && b == null) return null;
+        return (a != null ? a : 0.0) + (b != null ? b : 0.0);
     }
 }

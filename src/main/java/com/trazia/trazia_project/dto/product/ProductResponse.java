@@ -33,7 +33,7 @@ public class ProductResponse {
     private String imagePath;       // Path en filesystem
     private String thumbnailPath;   // Path thumbnail
     
-    private ProductNutriments nutriments;
+    private NutrimentsDTO nutriments;
     private Integer servingSizeGrams;
     private String servingDescription;
     private LabelingRegion labelingRegion;
