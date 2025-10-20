@@ -23,7 +23,7 @@ public class SpoonacularService {
     }
 
     /**
-     * TODO: Implementar análisis dietético con Spoonacular
+     * Implementar análisis dietético con Spoonacular
      * 
      * Este método llamará a Spoonacular para obtener etiquetas dietéticas y Health Score.
      * Requiere:

@@ -1,0 +1,97 @@
+[
+    {
+        "nutrient": "Vitamin C",
+        "processingType": "boiling",
+        "retentionFactor": 0.55
+    },
+    {
+        "nutrient": "Vitamin C",
+        "processingType": "steaming",
+        "retentionFactor": 0.80
+    },
+    {
+        "nutrient": "Vitamin B1 (Thiamine)",
+        "processingType": "boiling",
+        "retentionFactor": 0.70
+    },
+    {
+        "nutrient": "Vitamin B1 (Thiamine)",
+        "processingType": "baking",
+        "retentionFactor": 0.85
+    },
+    {
+        "nutrient": "Vitamin B2 (Riboflavin)",
+        "processingType": "boiling",
+        "retentionFactor": 0.75
+    },
+    {
+        "nutrient": "Vitamin B3 (Niacin)",
+        "processingType": "boiling",
+        "retentionFactor": 0.80
+    },
+    {
+        "nutrient": "Vitamin A",
+        "processingType": "baking",
+        "retentionFactor": 0.85
+    },
+    {
+        "nutrient": "Vitamin D",
+        "processingType": "baking",
+        "retentionFactor": 0.90
+    },
+    {
+        "nutrient": "Vitamin E",
+        "processingType": "baking",
+        "retentionFactor": 0.85
+    },
+    {
+        "nutrient": "Iron",
+        "processingType": "boiling",
+        "retentionFactor": 0.95
+    },
+    {
+        "nutrient": "Iron",
+        "processingType": "frying",
+        "retentionFactor": 0.90
+    },
+    {
+        "nutrient": "Calcium",
+        "processingType": "baking",
+        "retentionFactor": 0.90
+    },
+    {
+        "nutrient": "Magnesium",
+        "processingType": "boiling",
+        "retentionFactor": 0.85
+    },
+    {
+        "nutrient": "Potassium",
+        "processingType": "boiling",
+        "retentionFactor": 0.80
+    },
+    {
+        "nutrient": "Zinc",
+        "processingType": "boiling",
+        "retentionFactor": 0.90
+    },
+    {
+        "nutrient": "Protein",
+        "processingType": "boiling",
+        "retentionFactor": 0.95
+    },
+    {
+        "nutrient": "Fat",
+        "processingType": "frying",
+        "retentionFactor": 0.85
+    },
+    {
+        "nutrient": "Carbohydrate",
+        "processingType": "boiling",
+        "retentionFactor": 0.95
+    },
+    {
+        "nutrient": "Water",
+        "processingType": "boiling",
+        "retentionFactor": 0.70
+    }
+]

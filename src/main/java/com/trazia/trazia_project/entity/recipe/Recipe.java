@@ -30,6 +30,7 @@ import com.trazia.trazia_project.entity.User;
 @AllArgsConstructor
 @Builder
 public class Recipe {
+    private String processingType;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
