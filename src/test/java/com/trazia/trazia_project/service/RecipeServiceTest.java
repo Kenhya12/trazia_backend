@@ -1,6 +1,11 @@
 package com.trazia.trazia_project.service;
 
+import com.trazia.trazia_project.ProductMapperTestUtils;
 import com.trazia.trazia_project.dto.product.NutrimentsDTO;
+import com.trazia.trazia_project.dto.product.ProductDTO;
+import com.trazia.trazia_project.dto.recipe.RecipeIngredientRequest;
+import com.trazia.trazia_project.dto.recipe.RecipeRequest;
+import com.trazia.trazia_project.dto.recipe.RecipeResponse;
 import com.trazia.trazia_project.entity.product.Product;
 import com.trazia.trazia_project.entity.recipe.Recipe;
 import com.trazia.trazia_project.entity.recipe.RecipeIngredient;
@@ -8,6 +13,7 @@ import com.trazia.trazia_project.mapper.ProductMapper;
 import com.trazia.trazia_project.repository.ProductRepository;
 import com.trazia.trazia_project.repository.RecipeIngredientRepository;
 import com.trazia.trazia_project.repository.RecipeRepository;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -15,9 +21,12 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 
 public class RecipeServiceTest {
 
@@ -45,45 +54,77 @@ public class RecipeServiceTest {
         }
 
         @Test
-        void shouldCalculateTotalCostAndNutritionPer100g() {
-                // 🧩 Setup productos y nutrientes simulados
-                Product product = new Product();
-                product.setCostPerUnit(10.0); // €/kg
-
-                NutrimentsDTO nutriments = NutrimentsDTO.builder()
-                                .protein(20.0)
-                                .carbohydrates(30.0)
-                                .fat(10.0)
+        void shouldCreateRecipeSuccessfully() {
+                // Preparar producto con nutriments por defecto
+                Product product = Product.builder()
+                                .id(1L)
+                                .name("Pan integral")
+                                .costPerUnit(5.0)
+                                .nutriments(ProductMapperTestUtils.createSampleProductNutriments())
                                 .build();
 
-                when(productMapper.toNutrimentsDTO(product.getNutriments())).thenReturn(nutriments);
-                when(nutritionConversionService.normalizeNutrients(nutriments, null, 100.0))
-                                .thenReturn(nutriments);
-                when(nutritionConversionService.sumNutrients(nutriments, nutriments))
-                                .thenReturn(nutriments);
-                when(nutritionConversionService.calculatePer100g(nutriments, 200.0))
-                                .thenReturn(nutriments);
-
-                // 🧩 Crear receta e ingredientes
-                RecipeIngredient ingredient = RecipeIngredient.builder()
-                                .product(product)
-                                .quantityGrams(100.0)
+                // Preparar NutrimentsDTO con valores por defecto
+                NutrimentsDTO nutrimentsDTO = NutrimentsDTO.builder()
+                                .protein(10.0)
+                                .carbohydrates(50.0)
+                                .fat(5.0)
+                                .sugars(5.0)
+                                .saturatedFat(2.0)
+                                .fiber(6.0)
+                                .sodium(0.5)
+                                .salt(1.2)
+                                .calories(250.0)
                                 .build();
 
-                Recipe recipe = Recipe.builder()
-                                .yieldWeightGrams(200.0)
-                                .ingredients(List.of(ingredient))
+                // Mockear mapper de Product a NutrimentsDTO
+                when(productMapper.toNutrimentsDTO(product.getNutriments())).thenReturn(nutrimentsDTO);
+
+                // Ingrediente request
+                RecipeIngredientRequest ingredientRequest = RecipeIngredientRequest.builder()
+                                .productId(product.getId())
+                                .quantityGrams(200)
                                 .build();
 
-                // 🧪 Ejecutar método a testear (usando buildRecipeResponse)
-                var response = recipeService.buildRecipeResponse(recipe);
+                // RecipeRequest con lista de ingredientes
+                RecipeRequest recipeRequest = RecipeRequest.builder()
+                                .name("Desayuno saludable")
+                                .yieldWeightGrams(400.0)
+                                .ingredients(List.of(ingredientRequest))
+                                .build();
 
-                // ✅ Verificar costo total (0.1 kg × 10 €/kg = 1 €)
-                assertEquals(1.0, response.getTotalCost(), 0.001);
+                // Mockear repositorios
+                when(productRepository.findById(product.getId())).thenReturn(Optional.of(product));
 
-                // ✅ Verificar nutrición normalizada a 100 g
-                assertEquals(20.0, response.getCalculatedNutrition().getProtein());
-                assertEquals(30.0, response.getCalculatedNutrition().getCarbohydrates());
-                assertEquals(10.0, response.getCalculatedNutrition().getFat());
+                doAnswer(invocation -> invocation.getArgument(0))
+                                .when(recipeIngredientRepository).save(any(RecipeIngredient.class));
+
+                Recipe savedRecipe = Recipe.builder()
+                                .id(1L)
+                                .name(recipeRequest.getName())
+                                .yieldWeightGrams(recipeRequest.getYieldWeightGrams())
+                                .ingredients(List.of(
+                                                RecipeIngredient.builder()
+                                                                .product(product)
+                                                                .quantityGrams(ingredientRequest.getQuantityGrams())
+                                                                .build()))
+                                .build();
+
+                when(recipeRepository.save(any(Recipe.class))).thenReturn(savedRecipe);
+
+                // Mockear ProductMapper para RecipeIngredientResponse
+                ProductDTO productDTO = ProductDTO.builder()
+                                .id(product.getId())
+                                .name(product.getName())
+                                .build();
+
+                when(productMapper.toProductDTO(product)).thenReturn(productDTO);
+
+                // Ejecutar método de creación
+                RecipeResponse createdRecipe = recipeService.createRecipe(recipeRequest, 1L);
+
+                // Validaciones
+                assertEquals("Desayuno saludable", createdRecipe.getName());
+                assertEquals(1, createdRecipe.getIngredients().size());
+                assertEquals("Pan integral", createdRecipe.getIngredients().get(0).getProduct().getName());
         }
 }

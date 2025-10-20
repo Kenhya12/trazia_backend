@@ -70,3 +70,6 @@ public class ProductRequest {
     private LabelingRegion labelingRegion;
 }
 
+
+
+

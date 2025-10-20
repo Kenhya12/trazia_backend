@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.1</version>
+        <version>3.4.10</version>
         <relativePath />
     </parent>
 
@@ -109,12 +109,12 @@
         </dependency>
 
         <!-- JUnit 5 para tests -->
-        <dependency>
+      <!--   <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
             <version>5.9.3</version>
             <scope>test</scope>
-        </dependency>
+        </dependency> -->
 
         <!-- Mockito para mocks -->
         <dependency>

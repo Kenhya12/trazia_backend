@@ -242,6 +242,16 @@ public class ProductService {
         }
     }
 
+
+     // ==================== DELETE PRODUCT ====================
+    public void deleteProduct(Long productId, Long userId) {
+    Product product = productRepository.findByIdAndUserId(productId, userId)
+            .orElseThrow(() -> new ProductNotFoundException(
+                    messageSource.getMessage("product.notFound", null, Locale.getDefault())));
+
+    productRepository.delete(product);
+}
+
     // ==================== HELPER METHODS ====================
 
     private String getMessage(String code, Object... args) {

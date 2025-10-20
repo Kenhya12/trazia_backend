@@ -1,7 +1,6 @@
 package com.trazia.trazia_project.dto.product;
 
 import lombok.Builder;
-import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
