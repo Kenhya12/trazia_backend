@@ -15,38 +15,41 @@ import java.util.Collections;
 @AllArgsConstructor
 @Builder
 public class User implements UserDetails {
-    
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private Company company;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @Column(unique = true, nullable = false, length = 50)
     private String username;
-    
+
     @Column(unique = true, nullable = false, length = 100)
     private String email;
-    
+
     @Column(nullable = false)
     private String password;
-    
+
     @Builder.Default
     @Column(nullable = false)
     private Boolean enabled = true;
-    
+
     @Builder.Default
     @Column(nullable = false)
     private Boolean accountNonExpired = true;
-    
+
     @Builder.Default
     @Column(nullable = false)
     private Boolean accountNonLocked = true;
-    
+
     @Builder.Default
     @Column(nullable = false)
     private Boolean credentialsNonExpired = true;
 
     // Implementación de UserDetails
-    
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.emptyList();
@@ -82,6 +85,3 @@ public class User implements UserDetails {
         return enabled;
     }
 }
-
-
-

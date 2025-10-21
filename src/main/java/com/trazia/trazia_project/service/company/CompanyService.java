@@ -5,6 +5,9 @@ import com.trazia.trazia_project.entity.Company;
 import com.trazia.trazia_project.entity.User;
 import com.trazia.trazia_project.repository.CompanyRepository;
 import com.trazia.trazia_project.repository.UserRepository;
+import org.springframework.security.access.AccessDeniedException;
+
+import jakarta.persistence.EntityNotFoundException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -42,7 +45,26 @@ public class CompanyService {
         // Asociación usuario -> empresa (asumiendo relación uno a uno)
         company.setUser(user);
 
-        // Guardar empresa en base de datos
+        // Guardar la empresa y devolverla
+        return companyRepository.save(company);
+    }
+
+    public Company updateCompany(Long companyId, CompanyDTO dto, String username) {
+        // Verificar que la empresa exista y pertenezca al usuario
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new EntityNotFoundException("Company not found"));
+
+        if (!company.getUser().getUsername().equals(username)) {
+            throw new AccessDeniedException("User not authorized to update this company");
+        }
+
+        // Actualizar campos editables
+        company.setBusinessName(dto.getBusinessName());
+        company.setTaxId(dto.getTaxId());
+        company.setAddress(dto.getAddress());
+        company.setHealthRegistration(dto.getHealthRegistration());
+        company.setLogo(dto.getLogo());
+
         return companyRepository.save(company);
     }
 }
