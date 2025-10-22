@@ -1,0 +1,13 @@
+{
+    "batchNumber": "Batch001",
+    "purchaseDate": "2025-10-20",
+    "receivingDate": "2025-10-21",
+    "supplierId": 1,
+    "documents": [
+        {
+            "documentName": "Certificado Calidad",
+            "qualityCertificateUrl": "https://example.com/certificado.pdf",
+            "labAnalysisUrl": "https://example.com/analisis.pdf"
+        }
+    ]
+}
