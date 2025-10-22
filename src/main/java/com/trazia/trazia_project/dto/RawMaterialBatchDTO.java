@@ -11,6 +11,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class RawMaterialBatchDTO {
+    private Long id;
 
     private String batchNumber;
 
@@ -21,4 +22,13 @@ public class RawMaterialBatchDTO {
     private Long supplierId;
 
     private List<DocumentDTO> documents;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id){
+        this.id = id;
+    }
 }
+

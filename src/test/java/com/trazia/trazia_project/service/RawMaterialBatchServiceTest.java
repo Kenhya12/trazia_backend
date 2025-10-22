@@ -4,24 +4,25 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.trazia.trazia_project.dto.RawMaterialBatchDTO;
-import com.trazia.trazia_project.dto.DocumentDTO;
 import com.trazia.trazia_project.entity.RawMaterialBatch;
 import com.trazia.trazia_project.repository.RawMaterialBatchRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
+
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 public class RawMaterialBatchServiceTest {
-    
-    @InjectMocks
-    private RawMaterialBatchService rawMaterialBatchService;
-    
+
     @Mock
     private RawMaterialBatchRepository rawMaterialBatchRepository;
+
+    @InjectMocks
+    private RawMaterialBatchService rawMaterialBatchService;
 
     @BeforeEach
     public void setUp() {
@@ -29,36 +30,53 @@ public class RawMaterialBatchServiceTest {
     }
 
     @Test
-    public void testSaveRawMaterialBatch_withDtoMapping() {
-        // Crear DTO de documento
-        DocumentDTO docDto = DocumentDTO.builder()
-            .documentName("Certificado Calidad")
-            .qualityCertificateUrl("http://example.com/cert.pdf")
-            .labAnalysisUrl("http://example.com/lab.pdf")
-            .build();
+    public void testSaveRawMaterialBatch() {
+        RawMaterialBatch batch = new RawMaterialBatch();
+        batch.setBatchNumber("BatchTest");
+        batch.setPurchaseDate(LocalDate.now().minusDays(1));
+        batch.setReceivingDate(LocalDate.now());
 
-        // Crear DTO de lote
-        RawMaterialBatchDTO batchDto = RawMaterialBatchDTO.builder()
-            .batchNumber("Batch123")
-            .purchaseDate(LocalDate.now().minusDays(1))
-            .receivingDate(LocalDate.now())
-            .supplierId(1L)
-            .documents(List.of(docDto))
-            .build();
+        when(rawMaterialBatchRepository.save(any(RawMaterialBatch.class))).thenReturn(batch);
 
-        RawMaterialBatch mockSavedBatch = new RawMaterialBatch();
-        mockSavedBatch.setId(1L);
-        mockSavedBatch.setBatchNumber(batchDto.getBatchNumber());
-        mockSavedBatch.setPurchaseDate(batchDto.getPurchaseDate());
-        mockSavedBatch.setReceivingDate(batchDto.getReceivingDate());
+        RawMaterialBatch savedBatch = rawMaterialBatchService.saveRawMaterialBatch(batch);
 
-        when(rawMaterialBatchRepository.save(any(RawMaterialBatch.class))).thenReturn(mockSavedBatch);
+        assertNotNull(savedBatch);
+        assertEquals("BatchTest", savedBatch.getBatchNumber());
+    }
 
-        RawMaterialBatch entityToSave = rawMaterialBatchService.mapDtoToEntity(batchDto);
-        RawMaterialBatch savedEntity = rawMaterialBatchService.saveRawMaterialBatch(entityToSave);
+    @Test
+    public void testFindByIdFound() {
+        RawMaterialBatch batch = new RawMaterialBatch();
+        batch.setId(1L);
+        when(rawMaterialBatchRepository.findById(1L)).thenReturn(Optional.of(batch));
 
-        assertNotNull(savedEntity);
-        assertEquals(1L, savedEntity.getId());
-        assertEquals(batchDto.getBatchNumber(), savedEntity.getBatchNumber());
+        Optional<RawMaterialBatch> found = rawMaterialBatchService.findById(1L);
+        assertTrue(found.isPresent());
+        assertEquals(1L, found.get().getId());
+    }
+
+    @Test
+    public void testFindByIdNotFound() {
+        when(rawMaterialBatchRepository.findById(2L)).thenReturn(Optional.empty());
+        Optional<RawMaterialBatch> found = rawMaterialBatchService.findById(2L);
+        assertFalse(found.isPresent());
+    }
+
+    @Test
+    public void testFindAll() {
+        RawMaterialBatch batch = new RawMaterialBatch();
+        batch.setBatchNumber("Batch1");
+        when(rawMaterialBatchRepository.findAll()).thenReturn(List.of(batch));
+
+        List<RawMaterialBatch> list = rawMaterialBatchService.findAll();
+        assertFalse(list.isEmpty());
+        assertEquals("Batch1", list.get(0).getBatchNumber());
+    }
+
+    @Test
+    public void testFindAllEmpty() {
+        when(rawMaterialBatchRepository.findAll()).thenReturn(Collections.emptyList());
+        List<RawMaterialBatch> list = rawMaterialBatchService.findAll();
+        assertTrue(list.isEmpty());
     }
 }

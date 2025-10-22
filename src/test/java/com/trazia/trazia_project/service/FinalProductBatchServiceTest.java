@@ -1,0 +1,53 @@
+package com.trazia.trazia_project.service;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import com.trazia.trazia_project.entity.FinalProductBatch;
+import com.trazia.trazia_project.entity.RawMaterialBatch;
+import com.trazia.trazia_project.repository.FinalProductBatchRepository;
+import com.trazia.trazia_project.repository.RawMaterialBatchRepository;
+
+import java.time.LocalDate;
+import java.util.List;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.*;
+
+public class FinalProductBatchServiceTest {
+
+    @Mock
+    private FinalProductBatchRepository finalProductBatchRepository;
+
+    @Mock
+    private RawMaterialBatchRepository rawMaterialBatchRepository;
+
+    @InjectMocks
+    private FinalProductBatchService finalProductBatchService;
+
+    @BeforeEach
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    public void testCreateFinalProductBatch() {
+        FinalProductBatch batch = new FinalProductBatch();
+        batch.setProductionDate(LocalDate.now());
+        batch.setResponsiblePerson("Tester");
+
+        List<Long> rawIds = List.of(1L, 2L);
+        List<RawMaterialBatch> rawBatches = List.of(new RawMaterialBatch(), new RawMaterialBatch());
+
+        when(rawMaterialBatchRepository.findAllById(rawIds)).thenReturn(rawBatches);
+        when(finalProductBatchRepository.countByProductionDate(any(LocalDate.class))).thenReturn(0L);
+        when(finalProductBatchRepository.save(any(FinalProductBatch.class))).thenAnswer(i -> i.getArgument(0));
+
+        FinalProductBatch saved = finalProductBatchService.createFinalProductBatch(batch, rawIds);
+
+        assertNotNull(saved.getBatchNumber());
+        assertEquals(2, saved.getRawMaterialBatchesUsed().size());
+        assertEquals("Tester", saved.getResponsiblePerson());
+    }
+}

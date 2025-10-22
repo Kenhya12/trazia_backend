@@ -2,16 +2,30 @@ package com.trazia.trazia_project.controller;
 
 import com.trazia.trazia_project.entity.RawMaterialBatch;
 import com.trazia.trazia_project.service.RawMaterialBatchService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
+
 @RestController
-@RequestMapping("/api/raw-material-batches")
+@RequestMapping("/raw-material-batches")
 public class RawMaterialBatchController {
 
-    @Autowired
-    private RawMaterialBatchService rawMaterialBatchService;
+    private final RawMaterialBatchService rawMaterialBatchService;
+
+    public RawMaterialBatchController(RawMaterialBatchService rawMaterialBatchService) {
+        this.rawMaterialBatchService = rawMaterialBatchService;
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<RawMaterialBatch> getBatchById(@PathVariable Long id) {
+        Optional<RawMaterialBatch> batch = rawMaterialBatchService.findById(id);
+        if (batch.isPresent()) {
+            return ResponseEntity.ok(batch.get());
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
 
     // Endpoint para crear un nuevo lote de materia prima
     @PostMapping
@@ -25,4 +39,5 @@ public class RawMaterialBatchController {
     public ResponseEntity<java.util.List<RawMaterialBatch>> getAllBatches() {
         return ResponseEntity.ok(rawMaterialBatchService.getAllBatches());
     }
+
 }
