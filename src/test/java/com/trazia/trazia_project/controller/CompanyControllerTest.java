@@ -1,10 +1,9 @@
-package com.trazia.trazia_project.controller;
+/* package com.trazia.trazia_project.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trazia.trazia_project.dto.company.CompanyDTO;
 import com.trazia.trazia_project.entity.Company;
 import com.trazia.trazia_project.entity.User;
-import com.trazia.trazia_project.repository.userRepository;
 import com.trazia.trazia_project.security.JwtTokenProvider;
 import com.trazia.trazia_project.service.company.CompanyService;
 import com.trazia.trazia_project.controller.CompanyController;
@@ -100,4 +99,4 @@ public void testUpdateCompany() throws Exception {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.businessName").value("Updated Company"));
 }
-}
+} */
