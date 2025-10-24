@@ -7,6 +7,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 /**
  * Entidad que representa un ingrediente dentro de una receta
  * Vincula una receta con un producto (insumo) y especifica la cantidad usada
@@ -46,11 +48,12 @@ public class RecipeIngredient {
 
     /**
      * Cantidad del ingrediente en gramos
+     * Cambiado a BigDecimal para permitir cálculos precisos en nutrición
      */
     @NotNull(message = "Quantity is required")
     @Positive(message = "Quantity must be positive")
-    @Column(name = "quantity_grams", nullable = false)
-    private Integer quantityGrams;
+    @Column(name = "quantity_grams", nullable = false, precision = 10, scale = 2)
+    private BigDecimal quantityGrams;
 
     /**
      * Nota opcional sobre el ingrediente (ej: "picado fino", "opcional")

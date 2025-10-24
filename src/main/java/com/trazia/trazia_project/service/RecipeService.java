@@ -1,7 +1,6 @@
 package com.trazia.trazia_project.service;
 
 import com.trazia.trazia_project.entity.User;
-
 import com.trazia.trazia_project.dto.product.NutrimentsDTO;
 import com.trazia.trazia_project.dto.product.ProductDTO;
 import com.trazia.trazia_project.dto.recipe.*;
@@ -20,12 +19,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Servicio principal para manejar recetas: creación, actualización,
+ * cálculo nutricional (HU 5.1) y construcción de responses.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -37,23 +39,22 @@ public class RecipeService {
         private final ProductMapper productMapper;
         private final NutritionConversionService nutritionConversionService;
 
+        // ===========================
+        // PUBLIC CRUD METHODS
+        // ===========================
+
         @Transactional
         public RecipeResponse createRecipe(RecipeRequest request, Long userId) {
                 log.info("Creating recipe '{}' for user {}", request.getName(), userId);
 
-                Recipe recipe = Recipe.builder()
-                                .name(request.getName())
-                                .description(request.getDescription())
-                                .yieldWeightGrams(request.getYieldWeightGrams())
-                                .user(User.builder().id(userId).build())
-                                .createdAt(LocalDateTime.now())
-                                .updatedAt(LocalDateTime.now())
-                                .build();
-
+                Recipe recipe = buildRecipeEntity(request, userId);
                 recipe = recipeRepository.save(recipe);
 
                 List<RecipeIngredient> ingredients = createIngredientsFromRequest(recipe, request.getIngredients());
                 recipe.setIngredients(ingredients);
+
+                // HU 5.1: compute and store nutriments per 100g for later use
+                calculatePerServing(recipe);
 
                 return buildRecipeResponse(recipe);
         }
@@ -64,27 +65,29 @@ public class RecipeService {
                                 .orElseThrow(() -> new ResourceNotFoundException(
                                                 "Recipe not found with id: " + recipeId));
 
+                // ensure nutriments are calculated
+                calculatePerServing(recipe);
                 return buildRecipeResponse(recipe);
         }
 
         @Transactional(readOnly = true)
         public RecipePageResponse getAllRecipes(Long userId, Pageable pageable) {
-                Page<Recipe> recipePage = recipeRepository.findByUserId(userId, pageable);
+                Page<Recipe> page = recipeRepository.findByUserId(userId, pageable);
 
-                List<RecipeSummaryResponse> summaries = recipePage.getContent().stream()
+                List<RecipeSummaryResponse> summaries = page.getContent().stream()
                                 .map(this::buildRecipeSummaryResponse)
                                 .collect(Collectors.toList());
 
                 return RecipePageResponse.builder()
                                 .recipes(summaries)
-                                .currentPage(recipePage.getNumber())
-                                .totalPages(recipePage.getTotalPages())
-                                .totalRecipes(recipePage.getTotalElements())
-                                .pageSize(recipePage.getSize())
-                                .first(recipePage.isFirst())
-                                .last(recipePage.isLast())
-                                .hasNext(recipePage.hasNext())
-                                .hasPrevious(recipePage.hasPrevious())
+                                .currentPage(page.getNumber())
+                                .totalPages(page.getTotalPages())
+                                .totalRecipes(page.getTotalElements())
+                                .pageSize(page.getSize())
+                                .first(page.isFirst())
+                                .last(page.isLast())
+                                .hasNext(page.hasNext())
+                                .hasPrevious(page.hasPrevious())
                                 .build();
         }
 
@@ -101,11 +104,12 @@ public class RecipeService {
                 recipe.setYieldWeightGrams(request.getYieldWeightGrams());
                 recipe.setUpdatedAt(LocalDateTime.now());
 
+                // replace ingredients
                 recipeIngredientRepository.deleteByRecipeId(recipeId);
-
                 List<RecipeIngredient> newIngredients = createIngredientsFromRequest(recipe, request.getIngredients());
                 recipe.setIngredients(newIngredients);
 
+                calculatePerServing(recipe);
                 recipeRepository.save(recipe);
 
                 return buildRecipeResponse(recipe);
@@ -116,66 +120,120 @@ public class RecipeService {
                 Recipe recipe = recipeRepository.findByIdAndUserId(recipeId, userId)
                                 .orElseThrow(() -> new ResourceNotFoundException(
                                                 "Recipe not found with id: " + recipeId));
-
                 log.info("Deleting recipe {} for user {}", recipeId, userId);
                 recipeRepository.delete(recipe);
         }
 
-        private List<RecipeIngredient> createIngredientsFromRequest(Recipe recipe,
-                        List<RecipeIngredientRequest> ingredientRequests) {
-                List<RecipeIngredient> ingredients = new ArrayList<>();
+        // ===========================
+        // HU 5.1 METHODS (Public for tests)
+        // ===========================
 
-                for (int i = 0; i < ingredientRequests.size(); i++) {
-                        RecipeIngredientRequest req = ingredientRequests.get(i);
+        /**
+         * Calcula y almacena en la entidad Recipe los nutrimentos por 100g.
+         * (Comentario en español: calcula los nutrientes totales de la receta,
+         * los normaliza por 100 g y los guarda en recipe.nutrimentsPor100g)
+         */
+        public void calculatePerServing(Recipe recipe) {
+                NutrimentsDTO total = calculateTotalNutrients(recipe);
+                NutrimentsDTO per100g = nutritionConversionService.calculatePer100g(total,
+                                recipe.getYieldWeightGrams());
+                recipe.setNutrimentsPor100g(per100g);
+        }
 
-                        Product product = productRepository.findById(req.getProductId())
+        /**
+         * Devuelve los % del Valor Diario para los nutrimentos recibidos.
+         */
+        public NutrimentsDTO calculateDailyValue(NutrimentsDTO nutriments) {
+                return nutritionConversionService.calculateDailyValue(nutriments);
+        }
+
+        /**
+         * Devuelve una cadena con los ingredientes formateados, ordenados por
+         * displayOrder (descendente)
+         * Ej: "Harina (200 g), Azúcar (50 g)"
+         */
+        public String formatIngredientsList(Recipe recipe) {
+                if (recipe == null || recipe.getIngredients() == null || recipe.getIngredients().isEmpty())
+                        return "";
+
+                return recipe.getIngredients().stream()
+                                .sorted(Comparator.comparing(RecipeIngredient::getDisplayOrder))
+                                .map(i -> {
+                                        String name = i.getProduct() != null ? i.getProduct().getName() : "UNKNOWN";
+                                        String qty = i.getQuantityGrams() != null ? i.getQuantityGrams().toPlainString()
+                                                        : "0";
+                                        return name + " (" + qty + " g)";
+                                })
+                                .collect(Collectors.joining(", "));
+        }
+
+        // ===========================
+        // PRIVATE HELPERS
+        // ===========================
+
+        private Recipe buildRecipeEntity(RecipeRequest request, Long userId) {
+                return Recipe.builder()
+                                .name(request.getName())
+                                .description(request.getDescription())
+                                .yieldWeightGrams(request.getYieldWeightGrams())
+                                .user(User.builder().id(userId).build())
+                                .createdAt(LocalDateTime.now())
+                                .updatedAt(LocalDateTime.now())
+                                .build();
+        }
+
+        private List<RecipeIngredient> createIngredientsFromRequest(Recipe recipe, List<RecipeIngredientRequest> reqs) {
+                if (reqs == null || reqs.isEmpty())
+                        return List.of();
+
+                List<RecipeIngredient> list = new ArrayList<>();
+                for (int i = 0; i < reqs.size(); i++) {
+                        RecipeIngredientRequest r = reqs.get(i);
+                        Product product = productRepository.findById(r.getProductId())
                                         .orElseThrow(() -> new ResourceNotFoundException(
-                                                        "Product not found with id: " + req.getProductId()));
-
-                        Integer displayOrderInt = req.getDisplayOrder() != null ? req.getDisplayOrder().intValue() : i;
+                                                        "Product not found with id: " + r.getProductId()));
+                        Integer displayOrder = r.getDisplayOrder() != null ? r.getDisplayOrder() : i;
 
                         RecipeIngredient ingredient = RecipeIngredient.builder()
                                         .recipe(recipe)
                                         .product(product)
-                                        .quantityGrams(req.getQuantityGrams())
-                                        .displayOrder(displayOrderInt)
+                                        .quantityGrams(r.getQuantityGrams() == null ? BigDecimal.ZERO
+                                                        : r.getQuantityGrams())
+                                        .displayOrder(displayOrder)
                                         .build();
 
-                        ingredients.add(recipeIngredientRepository.save(ingredient));
+                        RecipeIngredient saved = recipeIngredientRepository.save(ingredient);
+                        list.add(saved);
                 }
-
-                return ingredients;
+                return list;
         }
 
         private RecipeResponse buildRecipeResponse(Recipe recipe) {
                 double totalIngredientsWeight = calculateTotalIngredientsWeight(recipe);
                 double totalCost = calculateTotalCost(recipe);
 
-                NutrimentsDTO totalNutrients = calculateTotalNutrients(recipe);
-                NutrimentsDTO nutritionPer100g = nutritionConversionService.calculatePer100g(
-                                totalNutrients, recipe.getYieldWeightGrams());
+                NutrimentsDTO nutritionPer100g = recipe.getNutrimentsPor100g();
+                if (nutritionPer100g == null) {
+                        nutritionPer100g = nutritionConversionService.calculatePer100g(calculateTotalNutrients(recipe),
+                                        recipe.getYieldWeightGrams());
+                }
 
                 double yieldWeight = recipe.getYieldWeightGrams() != null ? recipe.getYieldWeightGrams().doubleValue()
                                 : 0.0;
                 double costPerGram = yieldWeight != 0.0 ? totalCost / yieldWeight : 0.0;
                 double costPer100g = costPerGram * 100.0;
-
-                double yieldLossPercentage = calculateYieldLossPercentage(totalIngredientsWeight,
-                                yieldWeight);
+                double yieldLossPercentage = calculateYieldLossPercentage(totalIngredientsWeight, yieldWeight);
 
                 List<RecipeIngredientResponse> ingredientResponses = recipe.getIngredients().stream()
                                 .sorted(Comparator.comparing(RecipeIngredient::getDisplayOrder))
-                                .map(ingredient -> buildIngredientResponse(ingredient, totalIngredientsWeight,
-                                                totalCost))
+                                .map(i -> buildIngredientResponse(i, totalIngredientsWeight, totalCost))
                                 .collect(Collectors.toList());
 
                 return RecipeResponse.builder()
                                 .id(recipe.getId())
                                 .name(recipe.getName())
                                 .description(recipe.getDescription())
-                                .yieldWeightGrams(recipe.getYieldWeightGrams() != null
-                                                ? recipe.getYieldWeightGrams().doubleValue()
-                                                : 0.0)
+                                .yieldWeightGrams(yieldWeight)
                                 .ingredients(ingredientResponses)
                                 .totalCost(totalCost)
                                 .costPerGram(costPerGram)
@@ -189,41 +247,44 @@ public class RecipeService {
                                 .build();
         }
 
+        // ===========================
+        // PRIVATE CALCULATIONS
+        // ===========================
+
         private double calculateTotalIngredientsWeight(Recipe recipe) {
+                if (recipe.getIngredients() == null)
+                        return 0.0;
                 return recipe.getIngredients().stream()
-                                .mapToDouble(RecipeIngredient::getQuantityGrams)
+                                .mapToDouble(i -> i.getQuantityGrams() != null ? i.getQuantityGrams().doubleValue()
+                                                : 0.0)
                                 .sum();
         }
 
         private double calculateIngredientCost(RecipeIngredient ingredient) {
                 Product product = ingredient.getProduct();
-
-                if (product.getCostPerUnit() == null) {
+                if (product == null || product.getCostPerUnit() == null)
                         return 0.0;
-                }
-
-                double quantityKg = ingredient.getQuantityGrams() / 1000.0;
+                double quantityKg = ingredient.getQuantityGrams().doubleValue() / 1000.0;
                 return quantityKg * product.getCostPerUnit();
         }
 
         private double calculateTotalCost(Recipe recipe) {
+                if (recipe.getIngredients() == null)
+                        return 0.0;
                 return recipe.getIngredients().stream()
                                 .mapToDouble(this::calculateIngredientCost)
                                 .sum();
         }
 
         private double calculateYieldLossPercentage(double totalIngredientsWeight, double yieldWeightGrams) {
-                if (totalIngredientsWeight == 0) {
+                if (totalIngredientsWeight == 0)
                         return 0.0;
-                }
                 double loss = totalIngredientsWeight - yieldWeightGrams;
                 return (loss / totalIngredientsWeight) * 100.0;
         }
 
         private RecipeIngredientResponse buildIngredientResponse(RecipeIngredient ingredient,
                         double totalIngredientsWeight, double totalCost) {
-
-                // CORREGIDO: Usar toProductDTO en lugar de toResponse
                 ProductDTO productDTO = productMapper.toProductDTO(ingredient.getProduct());
                 double ingredientCost = calculateIngredientCost(ingredient);
                 double percentageOfTotal = totalIngredientsWeight != 0
@@ -232,65 +293,83 @@ public class RecipeService {
 
                 return RecipeIngredientResponse.builder()
                                 .id(ingredient.getId())
-                                .product(productDTO) // ✅ Ahora usa ProductDTO con nutriments
+                                .product(productDTO)
                                 .quantityGrams(ingredient.getQuantityGrams().doubleValue())
-                                .displayOrder(ingredient.getDisplayOrder())
-                                .ingredientCost(ingredientCost)
                                 .percentageOfTotal(percentageOfTotal)
+                                .cost(ingredientCost)
                                 .build();
         }
 
+        /**
+         * Suma los nutrimentos de todos los ingredientes (proporcional a su cantidad)
+         * Devuelve un NutrimentsDTO con totales absolutos (antes de normalizar por
+         * 100g)
+         */
         private NutrimentsDTO calculateTotalNutrients(Recipe recipe) {
-                NutrimentsDTO totalNutrients = new NutrimentsDTO();
+                NutrimentsDTO total = NutrimentsDTO.builder()
+                                .calories(0.0)
+                                .protein(0.0)
+                                .carbohydrates(0.0)
+                                .sugars(0.0)
+                                .fat(0.0)
+                                .saturatedFat(0.0)
+                                .fiber(0.0)
+                                .sodium(0.0)
+                                .salt(0.0)
+                                .build();
 
-                for (RecipeIngredient ingredient : recipe.getIngredients()) {
-                        Product product = ingredient.getProduct();
+                if (recipe.getIngredients() == null || recipe.getIngredients().isEmpty())
+                        return total;
 
-                        // Obtener ProductNutriments del producto (ENTIDAD)
-                        com.trazia.trazia_project.entity.product.ProductNutriments productNutriments = product
-                                        .getNutriments();
-                        if (productNutriments == null) {
+                // sum by proportion of each ingredient relative to total ingredient weight
+                double totalWeight = calculateTotalIngredientsWeight(recipe);
+                if (totalWeight == 0.0)
+                        return total;
+
+                for (RecipeIngredient ri : recipe.getIngredients()) {
+                        BigDecimal qty = ri.getQuantityGrams() != null ? ri.getQuantityGrams() : BigDecimal.ZERO;
+                        double proportion = qty.doubleValue() / totalWeight;
+
+                        Product prod = ri.getProduct();
+                        if (prod == null || prod.getNutriments() == null)
                                 continue;
-                        }
 
-                        // Convertir a NutrimentsDTO
-                        NutrimentsDTO nutrients = productMapper.toNutrimentsDTO(productNutriments);
+                        // assume product.getNutriments() returns an object with getters in numeric
+                        // types (BigDecimal/double)
+                        // adapt mappings according to your ProductNutriments structure
+                        // using productMapper to convert product nutriments to NutrimentsDTO helps keep
+                        // mapping consistent
+                        NutrimentsDTO prodN = productMapper.toNutrimentsDTO(prod.getNutriments());
 
-                        // Obtener servingSize como Double
-                        Double servingSize = product.getServingSizeGrams() != null
-                                        ? product.getServingSizeGrams().doubleValue()
-                                        : null;
-
-                        // Usar el valor Double de quantityGrams
-                        Double quantityGrams = ingredient.getQuantityGrams() != null
-                                        ? ingredient.getQuantityGrams().doubleValue()
-                                        : 0.0;
-
-                        NutrimentsDTO usedNutrients = nutritionConversionService.normalizeNutrients(
-                                        nutrients, servingSize, quantityGrams);
-
-                        totalNutrients = nutritionConversionService.sumNutrients(totalNutrients, usedNutrients);
+                        total.setCalories(total.getCalories() + prodN.getCalories() * proportion);
+                        total.setProtein(total.getProtein() + prodN.getProtein() * proportion);
+                        total.setCarbohydrates(total.getCarbohydrates() + prodN.getCarbohydrates() * proportion);
+                        total.setSugars(total.getSugars() + prodN.getSugars() * proportion);
+                        total.setFat(total.getFat() + prodN.getFat() * proportion);
+                        total.setSaturatedFat(total.getSaturatedFat() + prodN.getSaturatedFat() * proportion);
+                        total.setFiber(total.getFiber() + prodN.getFiber() * proportion);
+                        total.setSodium(total.getSodium() + prodN.getSodium() * proportion);
+                        total.setSalt(total.getSalt() + prodN.getSalt() * proportion);
                 }
-                return totalNutrients;
+
+                return total;
         }
 
         private RecipeSummaryResponse buildRecipeSummaryResponse(Recipe recipe) {
-                double totalCost = calculateTotalCost(recipe);
-                double yieldWeight = recipe.getYieldWeightGrams() != null ? recipe.getYieldWeightGrams().doubleValue()
-                                : 0.0;
-                double costPer100g = yieldWeight != 0.0 ? (totalCost / yieldWeight) * 100.0 : 0.0;
-                int ingredientCount = recipe.getIngredients() != null ? recipe.getIngredients().size() : 0;
+                // build a lightweight summary used in paginated lists
+                NutrimentsDTO nutrition = recipe.getNutrimentsPor100g();
+                if (nutrition == null) {
+                        nutrition = nutritionConversionService.calculatePer100g(calculateTotalNutrients(recipe),
+                                        recipe.getYieldWeightGrams());
+                }
 
                 return RecipeSummaryResponse.builder()
                                 .id(recipe.getId())
                                 .name(recipe.getName())
-                                .description(recipe.getDescription())
-                                .yieldWeightGrams(recipe.getYieldWeightGrams())
-                                .totalCost(totalCost)
-                                .costPer100g(costPer100g)
-                                .ingredientCount(ingredientCount)
-                                .createdAt(recipe.getCreatedAt())
-                                .updatedAt(recipe.getUpdatedAt())
+                                .yieldWeightGrams(recipe.getYieldWeightGrams() != null
+                                                ? recipe.getYieldWeightGrams().doubleValue()
+                                                : 0.0)
+                                .calculatedCalories(nutrition != null ? nutrition.getCalories() : 0.0)
                                 .build();
         }
 }

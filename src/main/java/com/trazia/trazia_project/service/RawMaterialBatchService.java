@@ -18,6 +18,11 @@ public class RawMaterialBatchService {
         return rawMaterialBatchRepository.save(batch);
     }
 
+    // Método público save() compatible con tests de Mockito
+    public RawMaterialBatch save(RawMaterialBatch batch) {
+        return rawMaterialBatchRepository.save(batch);
+    }
+
     public Optional<RawMaterialBatch> findById(Long id) {
         return rawMaterialBatchRepository.findById(id);
     }

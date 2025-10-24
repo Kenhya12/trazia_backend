@@ -4,6 +4,7 @@ import com.trazia.trazia_project.entity.RawMaterialBatch;
 import com.trazia.trazia_project.service.RawMaterialBatchService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
 
 import java.util.Optional;
 
@@ -29,11 +30,16 @@ public class RawMaterialBatchController {
 
     // Endpoint para crear un nuevo lote de materia prima
     @PostMapping
-    public ResponseEntity<RawMaterialBatch> createRawMaterialBatch(@RequestBody RawMaterialBatch batch) {
-        RawMaterialBatch savedBatch = rawMaterialBatchService.saveRawMaterialBatch(batch);
-        return ResponseEntity.ok(savedBatch);
+public ResponseEntity<RawMaterialBatch> createRawMaterialBatch(@RequestBody RawMaterialBatch batch) {
+    RawMaterialBatch savedBatch = rawMaterialBatchService.save(batch);
+
+    if (savedBatch == null) {
+        return ResponseEntity.badRequest().build();
     }
 
+    // ✅ Devuelve el objeto creado en el cuerpo y código HTTP 201
+    return ResponseEntity.status(HttpStatus.CREATED).body(savedBatch);
+}
     // Endpoint para obtener todos los lotes (opcional, para pruebas)
     @GetMapping
     public ResponseEntity<java.util.List<RawMaterialBatch>> getAllBatches() {

@@ -7,6 +7,8 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import com.trazia.trazia_project.dto.product.NutrimentsDTO;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,13 +20,12 @@ import com.trazia.trazia_project.entity.User;
  * Almacena ingredientes, rendimiento y permite cálculos nutricionales
  */
 @Entity
-@Table(name = "recipes", 
-    uniqueConstraints = @UniqueConstraint(name = "uk_user_recipe_name", columnNames = {"user_id", "name"}),
-    indexes = {
-        @Index(name = "idx_recipe_user_id", columnList = "user_id"),
-        @Index(name = "idx_recipe_created_at", columnList = "created_at"),
-        @Index(name = "idx_recipe_deleted", columnList = "deleted")
-    })
+@Table(name = "recipes", uniqueConstraints = @UniqueConstraint(name = "uk_user_recipe_name", columnNames = { "user_id",
+        "name" }), indexes = {
+                @Index(name = "idx_recipe_user_id", columnList = "user_id"),
+                @Index(name = "idx_recipe_created_at", columnList = "created_at"),
+                @Index(name = "idx_recipe_deleted", columnList = "deleted")
+        })
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -55,7 +56,8 @@ public class Recipe {
 
     /**
      * Peso del rendimiento final de la receta en gramos
-     * Ejemplo: Una receta puede usar 500g de ingredientes y rendir 450g de producto final
+     * Ejemplo: Una receta puede usar 500g de ingredientes y rendir 450g de producto
+     * final
      */
     @NotNull(message = "Yield weight is required")
     @Positive(message = "Yield weight must be positive")
@@ -135,16 +137,26 @@ public class Recipe {
     /**
      * Calcula el peso total de ingredientes
      */
-    public Integer getTotalIngredientsWeight() {
+    public Double getTotalIngredientsWeight() {
         return ingredients.stream()
-                .mapToInt(RecipeIngredient::getQuantityGrams)
+                .mapToDouble(i -> i.getQuantityGrams() != null ? i.getQuantityGrams().doubleValue() : 0.0)
                 .sum();
-    }
+    };
 
     /**
      * Verifica si la receta tiene ingredientes
      */
     public boolean hasIngredients() {
         return ingredients != null && !ingredients.isEmpty();
+    }
+
+    private NutrimentsDTO nutrimentsPor100g;
+
+    public NutrimentsDTO getNutrimentsPor100g() {
+        return nutrimentsPor100g;
+    }
+
+    public void setNutrimentsPor100g(NutrimentsDTO nutrimentsPor100g) {
+        this.nutrimentsPor100g = nutrimentsPor100g;
     }
 }

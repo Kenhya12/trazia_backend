@@ -1,5 +1,7 @@
 package com.trazia.trazia_project.dto.recipe;
 
+import java.math.BigDecimal;
+
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
@@ -27,7 +29,7 @@ public class RecipeIngredientRequest {
      */
     @NotNull(message = "La cantidad es obligatoria")
     @Positive(message = "La cantidad debe ser mayor a 0")
-    private Integer quantityGrams;
+    private BigDecimal quantityGrams;
 
     /**
      * Orden de visualización del ingrediente en la lista (opcional)

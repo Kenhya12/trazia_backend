@@ -44,5 +44,7 @@ public class RecipeIngredientResponse {
      * Porcentaje que representa este ingrediente respecto al total de la receta
      */
     private Double percentageOfTotal;
+
+    private Double cost;
 }
 

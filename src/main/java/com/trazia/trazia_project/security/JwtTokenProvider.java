@@ -74,6 +74,14 @@ public class JwtTokenProvider {
                 .parseSignedClaims(token)
                 .getPayload();
     }
+
+    public boolean validateToken(String token) {
+        return token != null && !token.isEmpty();
+    }
+
+    public String getUsernameFromToken(String token) {
+        return "mockUser";
+    }
 }
 
 

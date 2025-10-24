@@ -1,6 +1,7 @@
 package com.trazia.trazia_project.service;
 
 import com.trazia.trazia_project.dto.product.NutrimentsDTO;
+import com.trazia.trazia_project.constants.ReferenceDailyIntakes;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -87,5 +88,49 @@ public class NutritionConversionService {
     private Double addNullable(Double a, Double b) {
         if (a == null && b == null) return null;
         return (a != null ? a : 0.0) + (b != null ? b : 0.0);
+    }
+
+    public NutrimentsDTO calculateDailyValue(NutrimentsDTO nutriments) {
+        if (nutriments == null) {
+            return null;
+        }
+
+        NutrimentsDTO dailyValue = new NutrimentsDTO();
+
+        // Calcular el porcentaje del Valor Diario para cada nutriente basado en los valores de referencia
+        if (nutriments.getEnergyKcal() != null) {
+            // %VD de calorías basado en CALORIES de referencia
+            dailyValue.setEnergyKcal((nutriments.getEnergyKcal() / ReferenceDailyIntakes.CALORIES) * 100);
+        }
+        if (nutriments.getProtein() != null) {
+            // %VD de proteína basado en PROTEIN de referencia
+            dailyValue.setProtein((nutriments.getProtein() / ReferenceDailyIntakes.PROTEIN) * 100);
+        }
+        if (nutriments.getCarbohydrates() != null) {
+            // %VD de carbohidratos basado en CARBOHYDRATES de referencia
+            dailyValue.setCarbohydrates((nutriments.getCarbohydrates() / ReferenceDailyIntakes.CARBOHYDRATES) * 100);
+        }
+        if (nutriments.getSugars() != null) {
+            // %VD de azúcares basado en SUGARS de referencia
+            dailyValue.setSugars((nutriments.getSugars() / ReferenceDailyIntakes.SUGARS) * 100);
+        }
+        if (nutriments.getFat() != null) {
+            // %VD de grasa basado en FAT de referencia
+            dailyValue.setFat((nutriments.getFat() / ReferenceDailyIntakes.FAT) * 100);
+        }
+        if (nutriments.getSaturatedFat() != null) {
+            // %VD de grasa saturada basado en SATURATED_FAT de referencia
+            dailyValue.setSaturatedFat((nutriments.getSaturatedFat() / ReferenceDailyIntakes.SATURATED_FAT) * 100);
+        }
+        if (nutriments.getFiber() != null) {
+            // %VD de fibra basado en FIBER de referencia
+            dailyValue.setFiber((nutriments.getFiber() / ReferenceDailyIntakes.FIBER) * 100);
+        }
+        if (nutriments.getSodium() != null) {
+            // %VD de sodio basado en SODIUM de referencia
+            dailyValue.setSodium((nutriments.getSodium() / ReferenceDailyIntakes.SODIUM) * 100);
+        }
+
+        return dailyValue;
     }
 }

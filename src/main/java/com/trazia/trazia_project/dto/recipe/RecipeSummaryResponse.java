@@ -60,4 +60,34 @@ public class RecipeSummaryResponse {
      * Fecha de última modificación
      */
     private LocalDateTime updatedAt;
+
+        /**
+     * Calorías calculadas por 100g de la receta
+     */
+    private Double calculatedCalories;
+
+    /**
+     * Proteínas (g) por 100g de producto
+     */
+    private Double proteinPer100g;
+
+    /**
+     * Grasas (g) por 100g de producto
+     */
+    private Double fatPer100g;
+
+    /**
+     * Carbohidratos (g) por 100g de producto
+     */
+    private Double carbohydratesPer100g;
+
+    /**
+     * Número de lote del producto final
+     */
+    private String lotNumber;
+
+    /**
+     * Estado de la etiqueta (generada, pendiente, validada, etc.)
+     */
+    private String labelStatus;
 }
