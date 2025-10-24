@@ -134,17 +134,97 @@ public class RecipeService {
          * los normaliza por 100 g y los guarda en recipe.nutrimentsPor100g)
          */
         public void calculatePerServing(Recipe recipe) {
+                if (recipe.getYieldWeightGrams() == null) {
+                        throw new RuntimeException("Yield weight cannot be null");
+                }
+                if (recipe.getYieldWeightGrams() == 0.0) {
+                        throw new ArithmeticException("Yield weight cannot be zero");
+                }
+
                 NutrimentsDTO total = calculateTotalNutrients(recipe);
                 NutrimentsDTO per100g = nutritionConversionService.calculatePer100g(total,
                                 recipe.getYieldWeightGrams());
+
+                // Validación para nunca asignar null
+                if (per100g == null) {
+                        per100g = NutrimentsDTO.builder()
+                                        .calories(0.0)
+                                        .protein(0.0)
+                                        .carbohydrates(0.0)
+                                        .sugars(0.0)
+                                        .fat(0.0)
+                                        .saturatedFat(0.0)
+                                        .fiber(0.0)
+                                        .sodium(0.0)
+                                        .salt(0.0)
+                                        .build();
+                }
                 recipe.setNutrimentsPor100g(per100g);
         }
 
         /**
          * Devuelve los % del Valor Diario para los nutrimentos recibidos.
+         * Se asegura de que nunca retorne null, incluso si los nutrimentos son nulos o
+         * incompletos.
          */
         public NutrimentsDTO calculateDailyValue(NutrimentsDTO nutriments) {
-                return nutritionConversionService.calculateDailyValue(nutriments);
+                if (nutriments == null) {
+                        log.warn("calculateDailyValue() recibió un nutriments nulo, devolviendo valores vacíos.");
+                        return NutrimentsDTO.builder()
+                                        .calories(0.0)
+                                        .protein(0.0)
+                                        .carbohydrates(0.0)
+                                        .sugars(0.0)
+                                        .fat(0.0)
+                                        .saturatedFat(0.0)
+                                        .fiber(0.0)
+                                        .sodium(0.0)
+                                        .salt(0.0)
+                                        .build();
+                }
+
+                // Comprobación fuerte contra propiedades null en nutriments
+                nutriments.setCalories(Optional.ofNullable(nutriments.getCalories()).orElse(0.0));
+                nutriments.setProtein(Optional.ofNullable(nutriments.getProtein()).orElse(0.0));
+                nutriments.setCarbohydrates(Optional.ofNullable(nutriments.getCarbohydrates()).orElse(0.0));
+                nutriments.setSugars(Optional.ofNullable(nutriments.getSugars()).orElse(0.0));
+                nutriments.setFat(Optional.ofNullable(nutriments.getFat()).orElse(0.0));
+                nutriments.setSaturatedFat(Optional.ofNullable(nutriments.getSaturatedFat()).orElse(0.0));
+                nutriments.setFiber(Optional.ofNullable(nutriments.getFiber()).orElse(0.0));
+                nutriments.setSodium(Optional.ofNullable(nutriments.getSodium()).orElse(0.0));
+                nutriments.setSalt(Optional.ofNullable(nutriments.getSalt()).orElse(0.0));
+
+                try {
+                        NutrimentsDTO result = nutritionConversionService.calculateDailyValue(nutriments);
+                        if (result == null) {
+                                log.warn("El servicio de conversión devolvió null, generando NutrimentsDTO vacío.");
+                                return NutrimentsDTO.builder()
+                                                .calories(0.0)
+                                                .protein(0.0)
+                                                .carbohydrates(0.0)
+                                                .sugars(0.0)
+                                                .fat(0.0)
+                                                .saturatedFat(0.0)
+                                                .fiber(0.0)
+                                                .sodium(0.0)
+                                                .salt(0.0)
+                                                .build();
+                        }
+                        return result;
+                } catch (Exception e) {
+                        log.error("Error al calcular el valor diario de nutrientes: {}", e.getMessage(), e);
+                        return NutrimentsDTO.builder()
+                                        .calories(0.0)
+                                        .protein(0.0)
+                                        .carbohydrates(0.0)
+                                        .sugars(0.0)
+                                        .fat(0.0)
+                                        .saturatedFat(0.0)
+                                        .fiber(0.0)
+                                        .sodium(0.0)
+                                        .salt(0.0)
+                                        .build();
+                }
         }
 
         /**
@@ -153,18 +233,46 @@ public class RecipeService {
          * Ej: "Harina (200 g), Azúcar (50 g)"
          */
         public String formatIngredientsList(Recipe recipe) {
-                if (recipe == null || recipe.getIngredients() == null || recipe.getIngredients().isEmpty())
-                        return "";
+                if (recipe == null || recipe.getIngredients() == null || recipe.getIngredients().isEmpty()) {
+                        return "No hay ingredientes disponibles.";
+                }
 
-                return recipe.getIngredients().stream()
-                                .sorted(Comparator.comparing(RecipeIngredient::getDisplayOrder))
-                                .map(i -> {
-                                        String name = i.getProduct() != null ? i.getProduct().getName() : "UNKNOWN";
-                                        String qty = i.getQuantityGrams() != null ? i.getQuantityGrams().toPlainString()
-                                                        : "0";
-                                        return name + " (" + qty + " g)";
-                                })
-                                .collect(Collectors.joining(", "));
+                // Usar lista mutable para evitar errores al ordenar
+                List<RecipeIngredient> ingredients = new ArrayList<>(recipe.getIngredients());
+
+                // Ordenar ingredientes por nombre y cantidad de forma null-safe
+                ingredients.sort(
+                                Comparator.comparing(
+                                                (RecipeIngredient ingredient) -> ingredient.getProduct() != null
+                                                                ? ingredient.getProduct().getName() != null
+                                                                                ? ingredient.getProduct().getName()
+                                                                                : ""
+                                                                : "",
+                                                Comparator.nullsLast(String::compareTo)).thenComparing(
+                                                                (RecipeIngredient ingredient) -> ingredient
+                                                                                .getQuantityGrams() != null
+                                                                                                ? ingredient.getQuantityGrams()
+                                                                                                : BigDecimal.ZERO,
+                                                                Comparator.nullsLast(BigDecimal::compareTo)));
+
+                StringBuilder formattedList = new StringBuilder();
+
+                for (RecipeIngredient ingredient : ingredients) {
+                        String name = ingredient.getProduct() != null && ingredient.getProduct().getName() != null
+                                        ? ingredient.getProduct().getName()
+                                        : "Ingrediente desconocido";
+
+                        BigDecimal quantity = ingredient.getQuantityGrams() != null
+                                        ? ingredient.getQuantityGrams()
+                                        : BigDecimal.ZERO;
+
+                        formattedList.append(name)
+                                        .append(" - ")
+                                        .append(quantity)
+                                        .append("g\n");
+                }
+
+                return formattedList.toString().trim();
         }
 
         // ===========================
