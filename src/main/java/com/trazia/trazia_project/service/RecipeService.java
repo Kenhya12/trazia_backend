@@ -1,7 +1,6 @@
 package com.trazia.trazia_project.service;
 
 import com.trazia.trazia_project.entity.User;
-import com.trazia.trazia_project.dto.product.NutrimentsDTO;
 import com.trazia.trazia_project.dto.product.ProductDTO;
 import com.trazia.trazia_project.dto.recipe.*;
 import com.trazia.trazia_project.entity.product.Product;
@@ -9,6 +8,7 @@ import com.trazia.trazia_project.entity.recipe.Recipe;
 import com.trazia.trazia_project.entity.recipe.RecipeIngredient;
 import com.trazia.trazia_project.exception.ResourceNotFoundException;
 import com.trazia.trazia_project.mapper.ProductMapper;
+import com.trazia.trazia_project.model.NutrimentsDTO;
 import com.trazia.trazia_project.repository.ProductRepository;
 import com.trazia.trazia_project.repository.RecipeIngredientRepository;
 import com.trazia.trazia_project.repository.RecipeRepository;
@@ -159,7 +159,8 @@ public class RecipeService {
                                         .salt(0.0)
                                         .build();
                 }
-                recipe.setNutrimentsPor100g(per100g);
+                // Only set the ProductNutriments entity, not the DTO
+                recipe.setNutrimentsPor100g(productMapper.toEntityProductNutriments(per100g));
         }
 
         /**
@@ -320,10 +321,24 @@ public class RecipeService {
                 double totalIngredientsWeight = calculateTotalIngredientsWeight(recipe);
                 double totalCost = calculateTotalCost(recipe);
 
-                NutrimentsDTO nutritionPer100g = recipe.getNutrimentsPor100g();
+                // Convert ProductNutriments to NutrimentsDTO safely for API response
+                NutrimentsDTO nutritionPer100g = null;
+                if (recipe.getNutrimentsPor100g() != null) {
+                        nutritionPer100g = productMapper.toNutrimentsDTO(recipe.getNutrimentsPor100g());
+                }
+                // If still null, provide default zero DTO
                 if (nutritionPer100g == null) {
-                        nutritionPer100g = nutritionConversionService.calculatePer100g(calculateTotalNutrients(recipe),
-                                        recipe.getYieldWeightGrams());
+                        nutritionPer100g = NutrimentsDTO.builder()
+                                .calories(0.0)
+                                .protein(0.0)
+                                .carbohydrates(0.0)
+                                .sugars(0.0)
+                                .fat(0.0)
+                                .saturatedFat(0.0)
+                                .fiber(0.0)
+                                .sodium(0.0)
+                                .salt(0.0)
+                                .build();
                 }
 
                 double yieldWeight = recipe.getYieldWeightGrams() != null ? recipe.getYieldWeightGrams().doubleValue()
@@ -465,10 +480,22 @@ public class RecipeService {
 
         private RecipeSummaryResponse buildRecipeSummaryResponse(Recipe recipe) {
                 // build a lightweight summary used in paginated lists
-                NutrimentsDTO nutrition = recipe.getNutrimentsPor100g();
+                NutrimentsDTO nutrition = null;
+                if (recipe.getNutrimentsPor100g() != null) {
+                        nutrition = productMapper.toNutrimentsDTO(recipe.getNutrimentsPor100g());
+                }
                 if (nutrition == null) {
-                        nutrition = nutritionConversionService.calculatePer100g(calculateTotalNutrients(recipe),
-                                        recipe.getYieldWeightGrams());
+                        nutrition = NutrimentsDTO.builder()
+                                .calories(0.0)
+                                .protein(0.0)
+                                .carbohydrates(0.0)
+                                .sugars(0.0)
+                                .fat(0.0)
+                                .saturatedFat(0.0)
+                                .fiber(0.0)
+                                .sodium(0.0)
+                                .salt(0.0)
+                                .build();
                 }
 
                 return RecipeSummaryResponse.builder()

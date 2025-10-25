@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.trazia.trazia_project.entity.LabelingRegion;
 import com.trazia.trazia_project.entity.product.ProductCategory;
 import com.trazia.trazia_project.entity.product.ProductNutriments;
+import com.trazia.trazia_project.model.NutrimentsDTO;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

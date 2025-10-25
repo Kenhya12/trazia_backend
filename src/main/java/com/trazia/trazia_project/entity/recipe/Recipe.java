@@ -7,13 +7,12 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
-import com.trazia.trazia_project.dto.product.NutrimentsDTO;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 import com.trazia.trazia_project.entity.User;
+import com.trazia.trazia_project.entity.product.ProductNutriments;
 
 /**
  * Entidad para recetas personalizadas del usuario
@@ -150,13 +149,14 @@ public class Recipe {
         return ingredients != null && !ingredients.isEmpty();
     }
 
-    private NutrimentsDTO nutrimentsPor100g;
+    @Embedded
+    private ProductNutriments nutrimentsPor100g;
 
-    public NutrimentsDTO getNutrimentsPor100g() {
+    public ProductNutriments getNutrimentsPor100g() {
         return nutrimentsPor100g;
     }
 
-    public void setNutrimentsPor100g(NutrimentsDTO nutrimentsPor100g) {
+    public void setNutrimentsPor100g(ProductNutriments nutrimentsPor100g) {
         this.nutrimentsPor100g = nutrimentsPor100g;
     }
 }

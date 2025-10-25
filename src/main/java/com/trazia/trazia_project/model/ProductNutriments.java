@@ -1,16 +1,16 @@
-package com.trazia.trazia_project.dto.product;
+package com.trazia.trazia_project.model;
 
-import lombok.Builder;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Getter
-@Setter
+@Embeddable
+@Data
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 public class ProductNutriments {
     private Double calories;
     private Double energyJoules;

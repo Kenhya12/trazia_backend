@@ -1,7 +1,6 @@
 package com.trazia.trazia_project.service;
 
 import com.trazia.trazia_project.ProductMapperTestUtils;
-import com.trazia.trazia_project.dto.product.NutrimentsDTO;
 import com.trazia.trazia_project.dto.product.ProductDTO;
 import com.trazia.trazia_project.dto.recipe.RecipeIngredientRequest;
 import com.trazia.trazia_project.dto.recipe.RecipePageResponse;
@@ -12,6 +11,7 @@ import com.trazia.trazia_project.entity.recipe.Recipe;
 import com.trazia.trazia_project.entity.recipe.RecipeIngredient;
 import com.trazia.trazia_project.exception.ResourceNotFoundException;
 import com.trazia.trazia_project.mapper.ProductMapper;
+import com.trazia.trazia_project.model.NutrimentsDTO;
 import com.trazia.trazia_project.repository.ProductRepository;
 import com.trazia.trazia_project.repository.RecipeIngredientRepository;
 import com.trazia.trazia_project.repository.RecipeRepository;
@@ -131,7 +131,7 @@ public class RecipeServiceTest {
         void shouldCalculatePerServing() {
                 Recipe recipe = sampleRecipe();
                 // Set a fully initialized NutrimentsDTO with Double fields (no nulls)
-                recipe.setNutrimentsPor100g(NutrimentsDTO.builder()
+                NutrimentsDTO nutrimentsDTO = NutrimentsDTO.builder()
                                 .protein(1.0)
                                 .calories(10.0)
                                 .carbohydrates(2.0)
@@ -141,14 +141,19 @@ public class RecipeServiceTest {
                                 .fiber(0.3)
                                 .sodium(0.01)
                                 .salt(0.02)
-                                .build());
+                                .build();
+                // Mock ProductMapper toEntityProductNutriments mapping
+                var productNutriments = ProductMapperTestUtils.createSampleProductNutriments();
+                when(productMapper.toEntityProductNutriments(nutrimentsDTO)).thenReturn(productNutriments);
+                when(productMapper.toNutrimentsDTO(productNutriments)).thenReturn(nutrimentsDTO);
+                recipe.setNutrimentsPor100g(productMapper.toEntityProductNutriments(nutrimentsDTO));
                 // Ensure all values are Double, not BigDecimal, and no nulls
-                NutrimentsDTO nutriments = recipe.getNutrimentsPor100g();
+                NutrimentsDTO nutriments = productMapper.toNutrimentsDTO(recipe.getNutrimentsPor100g());
                 assertNotNull(nutriments);
                 assertTrue(nutriments.getCalories() != null && nutriments.getCalories() instanceof Double);
                 recipeService.calculatePerServing(recipe);
-                assertNotNull(recipe.getNutrimentsPor100g());
-                assertTrue(recipe.getNutrimentsPor100g().getCalories() != null);
+                assertNotNull(productMapper.toNutrimentsDTO(recipe.getNutrimentsPor100g()));
+                assertTrue(productMapper.toNutrimentsDTO(recipe.getNutrimentsPor100g()).getCalories() != null);
         }
 
         @Test
@@ -165,6 +170,10 @@ public class RecipeServiceTest {
                                 .sodium(0.02)
                                 .salt(0.04)
                                 .build();
+                // Mock ProductMapper toEntityProductNutriments mapping
+                var productNutriments = ProductMapperTestUtils.createSampleProductNutriments();
+                when(productMapper.toEntityProductNutriments(nutrimentsDTO)).thenReturn(productNutriments);
+                when(productMapper.toNutrimentsDTO(productNutriments)).thenReturn(nutrimentsDTO);
                 // Ensure all types are Double and not null
                 assertNotNull(nutrimentsDTO.getProtein());
                 assertTrue(nutrimentsDTO.getProtein() instanceof Double);
@@ -355,23 +364,27 @@ public class RecipeServiceTest {
                                 .build();
 
                 // Compose the Recipe with all fields non-null, including nutrimentsPor100g
+                NutrimentsDTO recipeNutrimentsDTO = NutrimentsDTO.builder()
+                                .protein(2.5)
+                                .calories(360.0)
+                                .carbohydrates(60.0)
+                                .sugars(22.0)
+                                .fat(0.8)
+                                .saturatedFat(0.1)
+                                .fiber(1.1)
+                                .sodium(0.005)
+                                .salt(0.012)
+                                .build();
+                var recipeProductNutriments = ProductMapperTestUtils.createSampleProductNutriments();
+                // For the mock: always map DTO <-> entity
+                when(productMapper.toEntityProductNutriments(recipeNutrimentsDTO)).thenReturn(recipeProductNutriments);
+                when(productMapper.toNutrimentsDTO(recipeProductNutriments)).thenReturn(recipeNutrimentsDTO);
                 Recipe recipe = Recipe.builder()
                                 .id(1L)
                                 .name("Bizcocho básico")
                                 .yieldWeightGrams(500.0)
                                 .ingredients(List.of(harinaIngredient, azucarIngredient))
-                                .nutrimentsPor100g(
-                                                NutrimentsDTO.builder()
-                                                                .protein(2.5)
-                                                                .calories(360.0)
-                                                                .carbohydrates(60.0)
-                                                                .sugars(22.0)
-                                                                .fat(0.8)
-                                                                .saturatedFat(0.1)
-                                                                .fiber(1.1)
-                                                                .sodium(0.005)
-                                                                .salt(0.012)
-                                                                .build())
+                                .nutrimentsPor100g(recipeProductNutriments)
                                 .build();
                 return recipe;
         }
@@ -472,10 +485,10 @@ public class RecipeServiceTest {
         void shouldCalculateCorrectValuesPerServing() {
                 Recipe recipe = sampleRecipe();
                 recipe.setYieldWeightGrams(250.0); // Reducir peso para recalcular
-                NutrimentsDTO before = recipe.getNutrimentsPor100g();
+                NutrimentsDTO before = productMapper.toNutrimentsDTO(recipe.getNutrimentsPor100g());
                 assertNotNull(before);
                 recipeService.calculatePerServing(recipe);
-                NutrimentsDTO after = recipe.getNutrimentsPor100g();
+                NutrimentsDTO after = productMapper.toNutrimentsDTO(recipe.getNutrimentsPor100g());
                 assertNotNull(after);
                 assertTrue(after.getCalories() <= before.getCalories());
         }

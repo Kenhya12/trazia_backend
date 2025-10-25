@@ -4,11 +4,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import com.trazia.trazia_project.dto.product.NutrimentsDTO;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.trazia.trazia_project.model.NutrimentsDTO;
 
 /**
  * DTO para devolver información completa de una receta al cliente

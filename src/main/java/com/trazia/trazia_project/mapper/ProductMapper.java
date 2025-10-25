@@ -3,6 +3,7 @@ package com.trazia.trazia_project.mapper;
 import com.trazia.trazia_project.dto.product.*;
 import com.trazia.trazia_project.entity.product.Product;
 import com.trazia.trazia_project.entity.product.ProductNutriments;
+import com.trazia.trazia_project.model.NutrimentsDTO;
 import com.trazia.trazia_project.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
@@ -48,7 +49,9 @@ public class ProductMapper {
 
     // Método para convertir NutrimentsDTO a ENTIDAD ProductNutriments
     public ProductNutriments toEntityProductNutriments(NutrimentsDTO dto) {
-        if (dto == null) return null;
+        if (dto == null){
+            return null;
+        }
         return ProductNutriments.builder()
                 .calories(dto.getEnergyKcal() != null ? BigDecimal.valueOf(dto.getEnergyKcal()) : null)
                 .protein(dto.getProtein() != null ? BigDecimal.valueOf(dto.getProtein()) : null)
@@ -59,7 +62,7 @@ public class ProductMapper {
                 .fiber(dto.getFiber() != null ? BigDecimal.valueOf(dto.getFiber()) : null)
                 .sodium(dto.getSodium() != null ? BigDecimal.valueOf(dto.getSodium()) : null)
                 .build();
-    }
+}
 
     public Product toEntity(ProductRequest dto, User user) {
         if (dto == null || user == null) return null;

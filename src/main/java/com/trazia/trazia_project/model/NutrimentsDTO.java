@@ -1,4 +1,4 @@
-package com.trazia.trazia_project.dto.product;
+package com.trazia.trazia_project.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

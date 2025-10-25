@@ -1,7 +1,8 @@
 package com.trazia.trazia_project.service;
 
-import com.trazia.trazia_project.dto.product.NutrimentsDTO;
 import com.trazia.trazia_project.constants.ReferenceDailyIntakes;
+import com.trazia.trazia_project.model.NutrimentsDTO;
+
 import org.springframework.stereotype.Service;
 
 @Service
