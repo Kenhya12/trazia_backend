@@ -35,6 +35,9 @@ public class RawMaterialBatchServiceTest {
         batch.setBatchNumber("BatchTest");
         batch.setPurchaseDate(LocalDate.now().minusDays(1));
         batch.setReceivingDate(LocalDate.now());
+        batch.setExpirationDate(LocalDate.now().plusMonths(6)); // nuevo
+        batch.setQuantity(10.0); // nuevo
+        batch.setProvider("Proveedor ABC"); // nuevo
 
         when(rawMaterialBatchRepository.save(any(RawMaterialBatch.class))).thenReturn(batch);
 
@@ -79,4 +82,116 @@ public class RawMaterialBatchServiceTest {
         List<RawMaterialBatch> list = rawMaterialBatchService.findAll();
         assertTrue(list.isEmpty());
     }
+
+    @Test
+    public void testSaveRawMaterialBatch_NullBatch() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            rawMaterialBatchService.saveRawMaterialBatch(null);
+        });
+    }
+
+    @Test
+    public void testFindById_ExceptionThrown() {
+        when(rawMaterialBatchRepository.findById(any(Long.class)))
+                .thenThrow(new RuntimeException("Database error"));
+
+        assertThrows(RuntimeException.class, () -> {
+            rawMaterialBatchService.findById(99L);
+        });
+    }
+
+    @Test
+    public void testSaveRawMaterialBatch_FutureDate() {
+        RawMaterialBatch batch = new RawMaterialBatch();
+        batch.setBatchNumber("FutureBatch");
+        batch.setPurchaseDate(LocalDate.now().plusDays(5));
+        batch.setReceivingDate(LocalDate.now().plusDays(6));
+        batch.setExpirationDate(LocalDate.now().plusMonths(6));
+        batch.setQuantity(10.0);
+        batch.setProvider("Proveedor XYZ"); // <-- asignar proveedor válido
+
+        when(rawMaterialBatchRepository.save(any(RawMaterialBatch.class))).thenReturn(batch);
+
+        RawMaterialBatch result = rawMaterialBatchService.saveRawMaterialBatch(batch);
+        assertNotNull(result);
+        assertEquals("FutureBatch", result.getBatchNumber());
+    }
+
+    @Test
+    void testSaveRawMaterialBatch_QuantityZero() {
+        RawMaterialBatch batch = new RawMaterialBatch();
+        batch.setBatchNumber("BatchZero");
+        batch.setPurchaseDate(LocalDate.now());
+        batch.setReceivingDate(LocalDate.now());
+        batch.setExpirationDate(LocalDate.now().plusMonths(6));
+        batch.setQuantity(0.0);
+        batch.setProvider("Proveedor Test");
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            rawMaterialBatchService.saveRawMaterialBatch(batch);
+        });
+        assertEquals("La cantidad debe ser mayor que cero", exception.getMessage());
+    }
+
+    @Test
+    void testSaveRawMaterialBatch_ExpirationDateNull() {
+        RawMaterialBatch batch = new RawMaterialBatch();
+        batch.setBatchNumber("BatchNoExp");
+        batch.setPurchaseDate(LocalDate.now());
+        batch.setReceivingDate(LocalDate.now());
+        batch.setQuantity(5.0);
+        batch.setProvider("Proveedor Test");
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            rawMaterialBatchService.saveRawMaterialBatch(batch);
+        });
+        assertEquals("La fecha de vencimiento no puede ser nula", exception.getMessage());
+    }
+
+    @Test
+    void testSaveRawMaterialBatch_MultipleValidBatches() {
+        RawMaterialBatch batch1 = new RawMaterialBatch();
+        batch1.setBatchNumber("Batch1");
+        batch1.setPurchaseDate(LocalDate.now().minusDays(2));
+        batch1.setReceivingDate(LocalDate.now().minusDays(1));
+        batch1.setExpirationDate(LocalDate.now().plusMonths(3));
+        batch1.setQuantity(10.0);
+        batch1.setProvider("Proveedor A");
+
+        RawMaterialBatch batch2 = new RawMaterialBatch();
+        batch2.setBatchNumber("Batch2");
+        batch2.setPurchaseDate(LocalDate.now().minusDays(3));
+        batch2.setReceivingDate(LocalDate.now().minusDays(2));
+        batch2.setExpirationDate(LocalDate.now().plusMonths(4));
+        batch2.setQuantity(20.0);
+        batch2.setProvider("Proveedor B");
+
+        when(rawMaterialBatchRepository.save(any(RawMaterialBatch.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        RawMaterialBatch saved1 = rawMaterialBatchService.saveRawMaterialBatch(batch1);
+        RawMaterialBatch saved2 = rawMaterialBatchService.saveRawMaterialBatch(batch2);
+
+        assertNotNull(saved1);
+        assertNotNull(saved2);
+        assertEquals("Batch1", saved1.getBatchNumber());
+        assertEquals("Batch2", saved2.getBatchNumber());
+    }
+
+    @Test
+void testSaveRawMaterialBatch_ReceivingBeforePurchase() {
+    RawMaterialBatch batch = new RawMaterialBatch();
+    batch.setBatchNumber("BatchInvalidDates");
+    batch.setPurchaseDate(LocalDate.now());
+    batch.setReceivingDate(LocalDate.now().minusDays(1));
+    batch.setExpirationDate(LocalDate.now().plusMonths(3));
+    batch.setQuantity(5.0);
+    batch.setProvider("Proveedor Test");
+
+    IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        rawMaterialBatchService.saveRawMaterialBatch(batch);
+    });
+    assertEquals("La fecha de recepción no puede ser anterior a la compra", exception.getMessage());
+}
+
 }

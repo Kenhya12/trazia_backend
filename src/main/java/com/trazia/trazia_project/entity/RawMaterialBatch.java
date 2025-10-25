@@ -23,6 +23,14 @@ public class RawMaterialBatch {
     @Column(name = "batch_number", nullable = false)
     private String batchNumber;
 
+    // Cantidad del lote (por ejemplo, en kg o litros)
+    @Column(name = "quantity", nullable = false)
+    private Double quantity;
+
+    // Fecha de caducidad de la materia prima
+    @Column(name = "expiration_date", nullable = false)
+    private LocalDate expirationDate;
+
     // Fecha en la que se realizó la compra
     @Column(name = "purchase_date", nullable = false)
     private LocalDate purchaseDate;
@@ -39,5 +47,13 @@ public class RawMaterialBatch {
     // Documentos asociados al lote, para trazabilidad y soporte documental
     @OneToMany(mappedBy = "rawMaterialBatch", cascade = CascadeType.ALL)
     private List<Document> documents;
+
+    // Setter auxiliar para compatibilidad con tests que usan 'setProvider'
+    public void setProvider(String providerName) {
+        if (this.supplier == null) {
+            this.supplier = new Supplier();
+        }
+        this.supplier.setName(providerName);
+    }
 }
 

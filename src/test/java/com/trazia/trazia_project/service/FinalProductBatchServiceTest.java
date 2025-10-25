@@ -1,6 +1,7 @@
 package com.trazia.trazia_project.service;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.trazia.trazia_project.entity.FinalProductBatch;
@@ -49,5 +50,18 @@ public class FinalProductBatchServiceTest {
         assertNotNull(saved.getBatchNumber());
         assertEquals(2, saved.getRawMaterialBatchesUsed().size());
         assertEquals("Tester", saved.getResponsiblePerson());
+    }
+
+    @Test
+    public void testCreateFinalProductBatch_generatesSequentialBatchNumbers() {
+        FinalProductBatch batch = new FinalProductBatch();
+        batch.setProductionDate(LocalDate.now());
+        batch.setResponsiblePerson("Tester");
+
+        when(finalProductBatchRepository.countByProductionDate(any(LocalDate.class))).thenReturn(5L);
+        when(finalProductBatchRepository.save(any(FinalProductBatch.class))).thenAnswer(i -> i.getArgument(0));
+
+        FinalProductBatch saved = finalProductBatchService.createFinalProductBatch(batch, List.of());
+        assertTrue(saved.getBatchNumber().contains("6"));
     }
 }

@@ -38,6 +38,7 @@ public class RawMaterialBatchControllerTest {
 
     @BeforeEach
     void setup() {
+        System.out.println("---- Running setup ----");
         Mockito.when(jwtTokenProvider.validateToken(Mockito.anyString())).thenReturn(true);
         Mockito.when(jwtTokenProvider.getUsernameFromToken(Mockito.anyString())).thenReturn("testuser");
     }
