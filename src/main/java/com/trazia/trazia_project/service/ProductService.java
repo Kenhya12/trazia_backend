@@ -21,7 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,7 +35,7 @@ public class ProductService {
     private final UserRepository userRepository;
     private final ProductMapper productMapper;
     private final MessageSource messageSource;
-    private final ImageStorageService imageStorageService;  // ✅ SOLO UNA VEZ
+    private final ImageStorageService imageStorageService; // ✅ SOLO UNA VEZ
 
     // ==================== CRUD OPERATIONS ====================
 
@@ -166,6 +168,19 @@ public class ProductService {
         return productMapper.toPageResponse(products);
     }
 
+    public List<ProductResponse> listProducts() {
+        // Recupera todos los productos desde la base de datos o repositorio
+        List<Product> products = productRepository.findAll();
+
+        // Mapea a DTO
+        return products.stream()
+                .map(product -> ProductResponse.builder()
+                        .id(product.getId())
+                        .name(product.getName())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
     // ==================== IMAGE OPERATIONS ====================
 
     @Transactional
@@ -242,15 +257,14 @@ public class ProductService {
         }
     }
 
-
-     // ==================== DELETE PRODUCT ====================
+    // ==================== DELETE PRODUCT ====================
     public void deleteProduct(Long productId, Long userId) {
-    Product product = productRepository.findByIdAndUserId(productId, userId)
-            .orElseThrow(() -> new ProductNotFoundException(
-                    messageSource.getMessage("product.notFound", null, Locale.getDefault())));
+        Product product = productRepository.findByIdAndUserId(productId, userId)
+                .orElseThrow(() -> new ProductNotFoundException(
+                        messageSource.getMessage("product.notFound", null, Locale.getDefault())));
 
-    productRepository.delete(product);
-}
+        productRepository.delete(product);
+    }
 
     // ==================== HELPER METHODS ====================
 

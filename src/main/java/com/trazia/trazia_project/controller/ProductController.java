@@ -1,12 +1,15 @@
 package com.trazia.trazia_project.controller;
 
+import org.springframework.http.MediaType;
 import com.trazia.trazia_project.dto.product.*;
 import com.trazia.trazia_project.entity.User;
 import com.trazia.trazia_project.entity.product.ProductCategory;
 import com.trazia.trazia_project.service.ProductService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
+
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -14,26 +17,39 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/products")
-@RequiredArgsConstructor
 @Slf4j
 public class ProductController {
 
         private final ProductService productService;
 
+        // Constructor para inyección de dependencias
+        public ProductController(ProductService productService) {
+                this.productService = productService;
+        }
+
+        @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+        public ResponseEntity<List<ProductResponse>> listProducts() {
+                // log.info("Listing all products (non-paginated)");
+                List<ProductResponse> products = productService.listProducts();
+                return ResponseEntity.ok()
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .body(products);
+        }
+
         @PostMapping
         public ResponseEntity<ProductResponse> createProduct(
                         @Valid @RequestBody ProductRequest request,
                         @AuthenticationPrincipal User user) {
-                log.info("Creating product with name: {} for user ID: {}",
-                                request.getName(), user.getId());
+                log.info("Creating product with name: {} for user ID: {}", request.getName(), user.getId());
                 ProductResponse response = productService.createProduct(request, user.getId());
                 return ResponseEntity.status(HttpStatus.CREATED).body(response);
         }
 
-        @GetMapping
+        @GetMapping(path = "/page", produces = MediaType.APPLICATION_JSON_VALUE)
         public ResponseEntity<ProductPageResponse> getAllProducts(
                         @RequestParam(defaultValue = "0") int page,
                         @RequestParam(defaultValue = "20") int size,
@@ -51,6 +67,9 @@ public class ProductController {
         public ResponseEntity<ProductResponse> getProductById(@PathVariable Long id) {
                 log.info("Fetching product with ID: {}", id);
                 ProductResponse response = productService.getProductById(id);
+                if (response == null) {
+                        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found");
+                }
                 return ResponseEntity.ok(response);
         }
 
@@ -114,4 +133,5 @@ public class ProductController {
                 productService.hardDeleteProduct(id, user.getId());
                 return ResponseEntity.noContent().build();
         }
+
 }
