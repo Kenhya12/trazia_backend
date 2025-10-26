@@ -30,20 +30,22 @@ public class LabelPrintDTO {
     private String ingredients;
     private String highlightedAllergens;
 
-    // Información nutricional por 100g y por porción
+    // Información nutricional por 100g
     private BigDecimal energyPer100g;
-    private BigDecimal energyPerServing;
-    private BigDecimal fat;
-    private BigDecimal saturatedFat;
-    private BigDecimal carbohydrates;
-    private BigDecimal sugars;
-    private BigDecimal proteins;
-    private BigDecimal salt;
-    private BigDecimal fiber;
+    private BigDecimal fatPer100g;
+    private BigDecimal saturatedFatPer100g;
+    private BigDecimal carbsPer100g;
+    private BigDecimal sugarsPer100g;
+    private BigDecimal proteinPer100g;
+    private BigDecimal saltPer100g;
+    private BigDecimal fiberPer100g;
+    private BigDecimal sodiumPer100g;
 
     // Porcentaje del Valor Diario (%VD)
     private BigDecimal dvEnergy;
     private BigDecimal dvFat;
+    private BigDecimal dvSaturatedFat;
+    private BigDecimal dvCarbohydrates;
     private BigDecimal dvSugars;
     private BigDecimal dvProteins;
     private BigDecimal dvSalt;
@@ -74,12 +76,5 @@ public class LabelPrintDTO {
     private String ingredientsList;
     private BigDecimal yieldWeightGrams;
     private String legalDisclaimer;
-    private BigDecimal proteinPer100g;
-    private BigDecimal fatPer100g;
-    private BigDecimal carbsPer100g;
-    private BigDecimal sugarsPer100g;
-    private BigDecimal saturatedFatPer100g;
-    private BigDecimal sodiumPer100g;
-    private BigDecimal fiberPer100g;
-    private BigDecimal saltPer100g;
+
 }
