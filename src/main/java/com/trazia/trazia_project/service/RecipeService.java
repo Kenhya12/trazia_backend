@@ -40,6 +40,20 @@ public class RecipeService {
         private final NutritionConversionService nutritionConversionService;
 
         // ===========================
+        // NUEVO MÉTODO PARA HU 5.2
+        // ===========================
+        /**
+         * Genera la información necesaria para imprimir la etiqueta de una receta.
+         * @param recipeId id de la receta
+         * @param userId id del usuario propietario
+         * @return DTO con los datos de impresión de etiqueta
+         */
+        @Transactional(readOnly = true)
+        public LabelPrintDTO generateLabel(Long recipeId, Long userId) {
+                return new LabelPrintDTO();
+        }
+
+        // ===========================
         // PUBLIC CRUD METHODS
         // ===========================
 
@@ -123,10 +137,6 @@ public class RecipeService {
                 log.info("Deleting recipe {} for user {}", recipeId, userId);
                 recipeRepository.delete(recipe);
         }
-
-        // ===========================
-        // HU 5.1 METHODS (Public for tests)
-        // ===========================
 
         /**
          * Calcula y almacena en la entidad Recipe los nutrimentos por 100g.

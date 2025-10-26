@@ -4,6 +4,8 @@ import com.trazia.trazia_project.dto.recipe.*;
 import com.trazia.trazia_project.service.RecipeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 public class RecipeController {
 
     private final RecipeService recipeService;
+    private static final Logger logger = LoggerFactory.getLogger(RecipeController.class);
 
     // Crear receta
     @PostMapping
@@ -67,5 +70,22 @@ public class RecipeController {
         recipeService.deleteRecipe(id, userId);
         return ResponseEntity.noContent().build();
     }
-}
 
+    // Generar etiqueta nutricional
+    @GetMapping("/{id}/label")
+    public ResponseEntity<LabelPrintDTO> getRecipeLabel(
+            @PathVariable Long id,
+            @AuthenticationPrincipal(expression = "id") Long userId) {
+
+        try {
+            LabelPrintDTO label = recipeService.generateLabel(id, userId);
+            return ResponseEntity.ok(label);
+        } catch (com.trazia.trazia_project.exception.ResourceNotFoundException e) {
+            logger.warn("Recipe not found for label generation: id={}, userId={}", id, userId);
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            logger.error("Error generating label for recipe id={}, userId={}", id, userId, e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+}
