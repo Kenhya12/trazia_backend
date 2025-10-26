@@ -53,7 +53,7 @@ public class RecipeServiceImpl implements RecipeService {
         recipe = recipeRepository.save(recipe);
         List<RecipeIngredient> ingredients = createIngredientsFromRequest(recipe, request.getIngredients());
         recipe.setIngredients(ingredients);
-        
+
         // HU 5.1: compute and store nutriments per 100g for later use
         calculatePerServing(recipe);
         return buildRecipeResponse(recipe);
@@ -65,7 +65,7 @@ public class RecipeServiceImpl implements RecipeService {
         Recipe recipe = recipeRepository.findByIdAndUserId(recipeId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Recipe not found with id: " + recipeId));
-        
+
         // ensure nutriments are calculated
         calculatePerServing(recipe);
         return buildRecipeResponse(recipe);
@@ -197,7 +197,8 @@ public class RecipeServiceImpl implements RecipeService {
     }
 
     /**
-     * Returns a formatted string with ingredients, ordered by displayOrder (descending)
+     * Returns a formatted string with ingredients, ordered by displayOrder
+     * (descending)
      * Ex: "Flour (200 g), Sugar (50 g)"
      */
     @Override
@@ -208,7 +209,7 @@ public class RecipeServiceImpl implements RecipeService {
 
         // Use mutable list to avoid errors when sorting
         List<RecipeIngredient> ingredients = new ArrayList<>(recipe.getIngredients());
-        
+
         // Sort ingredients by name and quantity null-safe
         ingredients.sort(
                 Comparator.comparing(
@@ -264,9 +265,12 @@ public class RecipeServiceImpl implements RecipeService {
         // Basic information
         label.setRecipeName(recipe.getName());
         label.setRecipeDescription(recipe.getDescription());
-        label.setYieldWeightGrams(recipe.getYieldWeightGrams() != null
-                ? BigDecimal.valueOf(recipe.getYieldWeightGrams())
-                : BigDecimal.ZERO);
+        // Null and type safe assignment for yield weight
+        label.setYieldWeightGrams(
+            recipe.getYieldWeightGrams() != null 
+                ? BigDecimal.valueOf(recipe.getYieldWeightGrams()) 
+                : BigDecimal.ZERO
+        );
 
         // Legal data
         label.setLegalDisclaimer("Best consumed before indicated date. Keep in cool, dry place.");
@@ -283,6 +287,16 @@ public class RecipeServiceImpl implements RecipeService {
             label.setSaturatedFatPer100g(nutriments.getSaturatedFat() != null ? BigDecimal.valueOf(nutriments.getSaturatedFat()) : BigDecimal.ZERO);
             label.setSaltPer100g(nutriments.getSalt() != null ? BigDecimal.valueOf(nutriments.getSalt()) : BigDecimal.ZERO);
             label.setSodiumPer100g(nutriments.getSodium() != null ? BigDecimal.valueOf(nutriments.getSodium()) : BigDecimal.ZERO);
+        } else {
+            label.setEnergyPer100g(BigDecimal.ZERO);
+            label.setProteinPer100g(BigDecimal.ZERO);
+            label.setFatPer100g(BigDecimal.ZERO);
+            label.setCarbsPer100g(BigDecimal.ZERO);
+            label.setSugarsPer100g(BigDecimal.ZERO);
+            label.setFiberPer100g(BigDecimal.ZERO);
+            label.setSaturatedFatPer100g(BigDecimal.ZERO);
+            label.setSaltPer100g(BigDecimal.ZERO);
+            label.setSodiumPer100g(BigDecimal.ZERO);
         }
 
         // Formatted ingredient list
@@ -292,9 +306,11 @@ public class RecipeServiceImpl implements RecipeService {
     }
 
     /**
-     * Generates the information needed to print a recipe label (alias for generateLabel).
+     * Generates the information needed to print a recipe label (alias for
+     * generateLabel).
+     * 
      * @param recipeId recipe id
-     * @param userId owner user id
+     * @param userId   owner user id
      * @return DTO with label printing data
      */
     @Override
