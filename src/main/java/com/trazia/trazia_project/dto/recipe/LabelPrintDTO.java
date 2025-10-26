@@ -28,7 +28,7 @@ public class LabelPrintDTO {
 
     // Ingredientes y alérgenos
     private String ingredients;
-    private String highlightedAllergens;
+    private java.util.List<String> allergens;
 
     // Información nutricional por 100g
     private BigDecimal energyPer100g;

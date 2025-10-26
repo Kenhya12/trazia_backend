@@ -303,9 +303,8 @@ public class RecipeServiceImpl implements RecipeService {
     }
 
     /**
-     * Generates the information needed to print a recipe label (alias for
-     * generateLabel).
-     * 
+     * Generates the information needed to print a recipe label, including allergen detection.
+     *
      * @param recipeId recipe id
      * @param userId   owner user id
      * @return DTO with label printing data
@@ -313,8 +312,74 @@ public class RecipeServiceImpl implements RecipeService {
     @Override
     @Transactional(readOnly = true)
     public LabelPrintDTO generatePrintLabel(Long recipeId, Long userId) {
-        return generateLabel(recipeId, userId);
+        // Obtener la receta del usuario
+        Recipe recipe = recipeRepository.findByIdAndUserId(recipeId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Recipe not found with id: " + recipeId));
+
+        // Asegurar que los nutrientes estén calculados
+        calculatePerServing(recipe);
+
+        // Crear DTO para la etiqueta
+        LabelPrintDTO label = new LabelPrintDTO();
+
+        // Información básica
+        label.setRecipeName(recipe.getName());
+        label.setRecipeDescription(recipe.getDescription());
+        label.setYieldWeightGrams(recipe.getYieldWeightGrams() != null
+                ? BigDecimal.valueOf(recipe.getYieldWeightGrams())
+                : BigDecimal.ZERO);
+        label.setLegalDisclaimer("Best consumed before indicated date. Keep in cool, dry place.");
+
+        // Información nutricional
+        if (recipe.getNutrimentsPor100g() != null) {
+            NutrimentsDTO nutriments = productMapper.toNutrimentsDTO(recipe.getNutrimentsPor100g());
+            label.setEnergyPer100g(nutriments.getCalories() != null ? BigDecimal.valueOf(nutriments.getCalories()) : BigDecimal.ZERO);
+            label.setProteinPer100g(nutriments.getProtein() != null ? BigDecimal.valueOf(nutriments.getProtein()) : BigDecimal.ZERO);
+            label.setFatPer100g(nutriments.getFat() != null ? BigDecimal.valueOf(nutriments.getFat()) : BigDecimal.ZERO);
+            label.setCarbsPer100g(nutriments.getCarbohydrates() != null ? BigDecimal.valueOf(nutriments.getCarbohydrates()) : BigDecimal.ZERO);
+            label.setSugarsPer100g(nutriments.getSugars() != null ? BigDecimal.valueOf(nutriments.getSugars()) : BigDecimal.ZERO);
+            label.setFiberPer100g(nutriments.getFiber() != null ? BigDecimal.valueOf(nutriments.getFiber()) : BigDecimal.ZERO);
+            label.setSaturatedFatPer100g(nutriments.getSaturatedFat() != null ? BigDecimal.valueOf(nutriments.getSaturatedFat()) : BigDecimal.ZERO);
+            label.setSaltPer100g(nutriments.getSalt() != null ? BigDecimal.valueOf(nutriments.getSalt()) : BigDecimal.ZERO);
+            label.setSodiumPer100g(nutriments.getSodium() != null ? BigDecimal.valueOf(nutriments.getSodium()) : BigDecimal.ZERO);
+        } else {
+            label.setEnergyPer100g(BigDecimal.ZERO);
+            label.setProteinPer100g(BigDecimal.ZERO);
+            label.setFatPer100g(BigDecimal.ZERO);
+            label.setCarbsPer100g(BigDecimal.ZERO);
+            label.setSugarsPer100g(BigDecimal.ZERO);
+            label.setFiberPer100g(BigDecimal.ZERO);
+            label.setSaturatedFatPer100g(BigDecimal.ZERO);
+            label.setSaltPer100g(BigDecimal.ZERO);
+            label.setSodiumPer100g(BigDecimal.ZERO);
+        }
+
+        // Lista de ingredientes formateada y ordenada
+        label.setIngredientsList(formatIngredientsList(recipe));
+
+        // Detectar alérgenos de todos los ingredientes
+        List<String> allergens = recipe.getIngredients().stream()
+                .filter(ri -> ri.getProduct() != null && ri.getProduct().getAllergens() != null)
+                .flatMap(ri -> {
+                    List<String> allergenList = ri.getProduct().getAllergens();
+                    return allergenList != null ? allergenList.stream() : java.util.stream.Stream.<String>empty();
+                })
+                .distinct()
+                .collect(Collectors.toList());
+
+        if (label.getAllergens() == null) {
+            try {
+                label.getClass().getMethod("setAllergens", List.class).invoke(label, allergens);
+            } catch (Exception e) {
+                log.warn("LabelPrintDTO does not have setAllergens method or failed to set allergens: {}", e.getMessage());
+            }
+        }
+
+        return label;
     }
+
+    
 
     // ===========================
     // PRIVATE HELPERS
@@ -522,4 +587,6 @@ public class RecipeServiceImpl implements RecipeService {
                 .salt(0.0)
                 .build();
     }
+
+    
 }

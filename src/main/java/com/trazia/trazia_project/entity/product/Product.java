@@ -79,10 +79,12 @@ public class Product {
     private String brand;
 
     /**
-     * Alérgenos del producto (opcional, como string)
+     * Alérgenos del producto (opcional, lista de strings)
      */
-    @Column(name = "allergens", length = 500)
-    private String allergens;
+    @ElementCollection
+    @CollectionTable(name = "product_allergens", joinColumns = @JoinColumn(name = "product_id"))
+    @Column(name = "allergen", length = 100)
+    private List<String> allergens = new ArrayList<>();
 
     /**
      * Categoría del producto
