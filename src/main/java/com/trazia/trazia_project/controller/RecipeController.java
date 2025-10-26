@@ -71,13 +71,14 @@ public class RecipeController {
         return ResponseEntity.noContent().build();
     }
 
-    // Generar etiqueta nutricional
+    // Generar etiqueta nutricional para impresión
     @GetMapping("/{id}/label")
     public ResponseEntity<LabelPrintDTO> getRecipeLabel(
             @PathVariable Long id,
             @AuthenticationPrincipal(expression = "id") Long userId) {
 
         try {
+            // Cambiado generatePrintLabel -> generateLabel
             LabelPrintDTO label = recipeService.generateLabel(id, userId);
             return ResponseEntity.ok(label);
         } catch (com.trazia.trazia_project.exception.ResourceNotFoundException e) {

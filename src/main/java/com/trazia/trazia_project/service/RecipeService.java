@@ -42,16 +42,6 @@ public class RecipeService {
         // ===========================
         // NUEVO MÉTODO PARA HU 5.2
         // ===========================
-        /**
-         * Genera la información necesaria para imprimir la etiqueta de una receta.
-         * @param recipeId id de la receta
-         * @param userId id del usuario propietario
-         * @return DTO con los datos de impresión de etiqueta
-         */
-        @Transactional(readOnly = true)
-        public LabelPrintDTO generateLabel(Long recipeId, Long userId) {
-                return new LabelPrintDTO();
-        }
 
         // ===========================
         // PUBLIC CRUD METHODS
@@ -516,5 +506,55 @@ public class RecipeService {
                                                 : 0.0)
                                 .calculatedCalories(nutrition != null ? nutrition.getCalories() : 0.0)
                                 .build();
+        }
+
+        /**
+         * Genera la información necesaria para imprimir la etiqueta de una receta.
+         * @param recipeId id de la receta
+         * @param userId id del usuario propietario
+         * @return DTO con los datos de impresión de etiqueta
+         */
+        @Transactional(readOnly = true)
+        public LabelPrintDTO generateLabel(Long recipeId, Long userId) {
+            // Buscar la receta del usuario
+            Recipe recipe = recipeRepository.findByIdAndUserId(recipeId, userId)
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Recipe not found with id: " + recipeId));
+
+            // Asegurarse de que los nutrimentos estén calculados
+            calculatePerServing(recipe);
+
+            // Crear DTO para la etiqueta
+            LabelPrintDTO label = new LabelPrintDTO();
+
+            // Información básica
+            label.setRecipeName(recipe.getName());
+            label.setRecipeDescription(recipe.getDescription());
+            label.setYieldWeightGrams(recipe.getYieldWeightGrams() != null
+                ? BigDecimal.valueOf(recipe.getYieldWeightGrams())
+                : BigDecimal.ZERO);
+
+            // Datos legales
+            label.setLegalDisclaimer("Consumir preferentemente antes de la fecha indicada. Mantener en lugar fresco y seco.");
+
+            // Información nutricional
+            if (recipe.getNutrimentsPor100g() != null) {
+                NutrimentsDTO nutriments = productMapper.toNutrimentsDTO(recipe.getNutrimentsPor100g());
+
+                label.setEnergyPer100g(nutriments.getCalories() != null ? BigDecimal.valueOf(nutriments.getCalories()) : BigDecimal.ZERO);
+                label.setProteinPer100g(nutriments.getProtein() != null ? BigDecimal.valueOf(nutriments.getProtein()) : BigDecimal.ZERO);
+                label.setFatPer100g(nutriments.getFat() != null ? BigDecimal.valueOf(nutriments.getFat()) : BigDecimal.ZERO);
+                label.setCarbsPer100g(nutriments.getCarbohydrates() != null ? BigDecimal.valueOf(nutriments.getCarbohydrates()) : BigDecimal.ZERO);
+                label.setSugarsPer100g(nutriments.getSugars() != null ? BigDecimal.valueOf(nutriments.getSugars()) : BigDecimal.ZERO);
+                label.setFiberPer100g(nutriments.getFiber() != null ? BigDecimal.valueOf(nutriments.getFiber()) : BigDecimal.ZERO);
+                label.setSaturatedFatPer100g(nutriments.getSaturatedFat() != null ? BigDecimal.valueOf(nutriments.getSaturatedFat()) : BigDecimal.ZERO);
+                label.setSaltPer100g(nutriments.getSalt() != null ? BigDecimal.valueOf(nutriments.getSalt()) : BigDecimal.ZERO);
+                label.setSodiumPer100g(nutriments.getSodium() != null ? BigDecimal.valueOf(nutriments.getSodium()) : BigDecimal.ZERO);
+            }
+
+            // Lista de ingredientes formateada
+            label.setIngredientsList(formatIngredientsList(recipe));
+
+            return label;
         }
 }

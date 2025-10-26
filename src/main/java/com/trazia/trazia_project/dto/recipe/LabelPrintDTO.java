@@ -22,7 +22,7 @@ public class LabelPrintDTO {
     private String countryOfOrigin;
 
     // Información de trazabilidad
-    private String batchNumber;  // Número de lote del producto terminado
+    private String batchNumber;
     private LocalDate productionDate;
     private LocalDate expiryDate;
 
@@ -49,22 +49,37 @@ public class LabelPrintDTO {
     private BigDecimal dvSalt;
 
     // Etiquetas de dieta / estilo de vida
-    private boolean vegan;            // Indica si el producto es apto para veganos
-    private boolean vegetarian;       // Indica si el producto es apto para vegetarianos
-    private boolean keto;              // Indica si el producto es apto para dieta keto
-    private boolean paleo;             // Indica si el producto es apto para dieta paleo
-    private boolean wholeFoods;         // Indica si el producto es apto para naturistas / whole foods
-    private boolean glutenFree;             // Indica si el producto es sin gluten
-    private boolean lactoseFree;            // Indica si el producto es libre de lactosa / dairy free
-    private boolean organic;              // Indica si el producto es orgánico
-    private boolean lowSugar;          // Indica si el producto es bajo en azúcar
-    private boolean noAddedSugar;      // Indica si el producto no tiene azúcar añadida
-    private boolean noAdditives;           // Indica si el producto no contiene aditivos
-    private boolean noPreservatives;       // Indica si el producto no contiene conservantes
-    private boolean otherLabels;             // Indica si el producto cumple con otras etiquetas dietéticas
+    private boolean vegan;
+    private boolean vegetarian;
+    private boolean keto;
+    private boolean paleo;
+    private boolean wholeFoods;
+    private boolean glutenFree;
+    private boolean lactoseFree;
+    private boolean organic;
+    private boolean lowSugar;
+    private boolean noAddedSugar;
+    private boolean noAdditives;
+    private boolean noPreservatives;
+    private boolean otherLabels;
 
     // Extras
     private String barcode;
     private String qrCode;
     private String nutriScore;
+
+    // Campos de receta
+    private String recipeName;
+    private String recipeDescription;
+    private String ingredientsList;
+    private BigDecimal yieldWeightGrams;
+    private String legalDisclaimer;
+    private BigDecimal proteinPer100g;
+    private BigDecimal fatPer100g;
+    private BigDecimal carbsPer100g;
+    private BigDecimal sugarsPer100g;
+    private BigDecimal saturatedFatPer100g;
+    private BigDecimal sodiumPer100g;
+    private BigDecimal fiberPer100g;
+    private BigDecimal saltPer100g;
 }
