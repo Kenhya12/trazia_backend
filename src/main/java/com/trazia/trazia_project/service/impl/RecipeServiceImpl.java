@@ -197,9 +197,8 @@ public class RecipeServiceImpl implements RecipeService {
     }
 
     /**
-     * Returns a formatted string with ingredients, ordered by displayOrder
-     * (descending)
-     * Ex: "Flour (200 g), Sugar (50 g)"
+     * Returns a formatted string with ingredients, ordered by quantity descending and includes allergens.
+     * T 5.3.2
      */
     @Override
     public String formatIngredientsList(Recipe recipe) {
@@ -207,38 +206,36 @@ public class RecipeServiceImpl implements RecipeService {
             return "No ingredients available.";
         }
 
-        // Use mutable list to avoid errors when sorting
         List<RecipeIngredient> ingredients = new ArrayList<>(recipe.getIngredients());
 
-        // Sort ingredients by name and quantity null-safe
-        ingredients.sort(
-                Comparator.comparing(
-                        (RecipeIngredient ingredient) -> ingredient.getProduct() != null
-                                ? ingredient.getProduct().getName() != null
-                                        ? ingredient.getProduct().getName()
-                                        : ""
-                                : "",
-                        Comparator.nullsLast(String::compareTo))
-                        .thenComparing(
-                                (RecipeIngredient ingredient) -> ingredient
-                                        .getQuantityGrams() != null
-                                                ? ingredient.getQuantityGrams()
-                                                : BigDecimal.ZERO,
-                                Comparator.nullsLast(BigDecimal::compareTo)));
+        // Ordenar por cantidad descendente (peso)
+        ingredients.sort(Comparator.comparing(
+                (RecipeIngredient i) -> i.getQuantityGrams() != null ? i.getQuantityGrams() : BigDecimal.ZERO
+        ).reversed());
 
         StringBuilder formattedList = new StringBuilder();
         for (RecipeIngredient ingredient : ingredients) {
             String name = ingredient.getProduct() != null && ingredient.getProduct().getName() != null
                     ? ingredient.getProduct().getName()
                     : "Unknown ingredient";
-            BigDecimal quantity = ingredient.getQuantityGrams() != null
-                    ? ingredient.getQuantityGrams()
-                    : BigDecimal.ZERO;
+
+            BigDecimal quantity = ingredient.getQuantityGrams() != null ? ingredient.getQuantityGrams() : BigDecimal.ZERO;
+
+            // Incluir alérgenos si existen
+            String allergens = "";
+            if (ingredient.getProduct() != null && ingredient.getProduct().getAllergens() != null
+                    && !ingredient.getProduct().getAllergens().isEmpty()) {
+                allergens = " (Allergens: " + String.join(", ", ingredient.getProduct().getAllergens()) + ")";
+            }
+
             formattedList.append(name)
                     .append(" - ")
                     .append(quantity)
-                    .append("g\n");
+                    .append("g")
+                    .append(allergens)
+                    .append("\n");
         }
+
         return formattedList.toString().trim();
     }
 

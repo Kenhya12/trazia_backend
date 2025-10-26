@@ -28,7 +28,8 @@ import com.trazia.trazia_project.entity.recipe.RecipeIngredient;
                 @Index(name = "idx_created_at", columnList = "created_at"),
                 @Index(name = "idx_deleted", columnList = "deleted")
         })
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -76,6 +77,12 @@ public class Product {
     @Size(max = 100, message = "Brand name cannot exceed 100 characters")
     @Column(length = 100)
     private String brand;
+
+    /**
+     * Alérgenos del producto (opcional, como string)
+     */
+    @Column(name = "allergens", length = 500)
+    private String allergens;
 
     /**
      * Categoría del producto
