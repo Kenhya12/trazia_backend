@@ -14,8 +14,10 @@ import com.trazia.trazia_project.repository.RecipeIngredientRepository;
 import com.trazia.trazia_project.repository.RecipeRepository;
 import com.trazia.trazia_project.service.NutritionConversionService;
 import com.trazia.trazia_project.service.RecipeService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -358,25 +360,30 @@ public class RecipeServiceImpl implements RecipeService {
         // Lista de ingredientes formateada y ordenada
         label.setIngredientsList(formatIngredientsList(recipe));
 
-        // Detectar alérgenos de todos los ingredientes
-        List<String> allergens = recipe.getIngredients().stream()
-                .filter(ri -> ri.getProduct() != null && ri.getProduct().getAllergens() != null)
-                .flatMap(ri -> {
-                    List<String> allergenList = ri.getProduct().getAllergens();
-                    return allergenList != null ? allergenList.stream() : java.util.stream.Stream.<String>empty();
-                })
-                .distinct()
-                .collect(Collectors.toList());
+// =========================
+// NUEVO BLOQUE: Alérgenos y Lote
+// =========================
+List<String> allergens = recipe.getIngredients().stream()
+        .filter(ri -> ri.getProduct() != null && ri.getProduct().getAllergens() != null)
+        .flatMap(ri -> ri.getProduct().getAllergens().stream())
+        .distinct()
+        .collect(Collectors.toList());
+label.setAllergens(allergens);
 
-        if (label.getAllergens() == null) {
-            try {
-                label.getClass().getMethod("setAllergens", List.class).invoke(label, allergens);
-            } catch (Exception e) {
-                log.warn("LabelPrintDTO does not have setAllergens method or failed to set allergens: {}", e.getMessage());
-            }
-        }
+label.setUsageInstructions(recipe.getUsageInstructions() != null
+        ? recipe.getUsageInstructions()
+        : "");
 
-        return label;
+label.setBatchNumber(recipe.getFinalProductLot() != null && recipe.getFinalProductLot().getBatchNumber() != null
+        ? recipe.getFinalProductLot().getBatchNumber()
+        : "");
+
+label.setExpiryDate(recipe.getFinalProductLot() != null
+        ? recipe.getFinalProductLot().getExpiryDate()
+        : null);
+
+// Retornar DTO
+return label;
     }
 
     

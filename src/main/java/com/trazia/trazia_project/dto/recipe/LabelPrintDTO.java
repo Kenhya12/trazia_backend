@@ -23,9 +23,10 @@ public class LabelPrintDTO {
 
     // Información de trazabilidad
     private String batchNumber;
-    private LocalDate productionDate;
     private LocalDate expiryDate;
-
+    private LocalDate productionDate;
+    private String usageInstructions;
+    
     // Ingredientes y alérgenos
     private String ingredients;
     private java.util.List<String> allergens;

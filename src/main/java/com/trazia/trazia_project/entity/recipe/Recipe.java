@@ -7,11 +7,13 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 import com.trazia.trazia_project.entity.User;
+import com.trazia.trazia_project.entity.product.FinalProductLot;
 import com.trazia.trazia_project.entity.product.ProductNutriments;
 
 /**
@@ -52,6 +54,10 @@ public class Recipe {
     @Size(max = 2000, message = "Description cannot exceed 2000 characters")
     @Column(length = 2000)
     private String description;
+
+    // NUEVOS CAMPOS
+    private String usageInstructions;          // Modo de empleo
+    private FinalProductLot finalProductLot;
 
     /**
      * Peso del rendimiento final de la receta en gramos
