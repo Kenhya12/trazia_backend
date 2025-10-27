@@ -1,7 +1,7 @@
 package com.trazia.trazia_project.controller.product;
 
 import com.trazia.trazia_project.dto.product.ProductResponse;
-import com.trazia.trazia_project.entity.User;
+import com.trazia.trazia_project.entity.user.User;
 import com.trazia.trazia_project.service.product.ProductService;
 
 import lombok.RequiredArgsConstructor;

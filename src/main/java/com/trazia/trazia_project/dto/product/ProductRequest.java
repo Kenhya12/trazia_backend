@@ -1,6 +1,6 @@
 package com.trazia.trazia_project.dto.product;
 
-import com.trazia.trazia_project.entity.LabelingRegion;
+import com.trazia.trazia_project.entity.company.LabelingRegion;
 import com.trazia.trazia_project.entity.product.ProductCategory;
 
 import jakarta.validation.Valid;

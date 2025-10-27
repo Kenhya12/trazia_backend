@@ -2,6 +2,9 @@ package com.trazia.trazia_project.entity;
 
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
+
+import com.trazia.trazia_project.entity.batch.RawMaterialBatch;
+
 import java.time.LocalDate;
 
 public class RawMaterialBatchTest {

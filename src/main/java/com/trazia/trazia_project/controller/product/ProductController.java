@@ -2,8 +2,8 @@ package com.trazia.trazia_project.controller.product;
 
 import org.springframework.http.MediaType;
 import com.trazia.trazia_project.dto.product.*;
-import com.trazia.trazia_project.entity.User;
 import com.trazia.trazia_project.entity.product.ProductCategory;
+import com.trazia.trazia_project.entity.user.User;
 import com.trazia.trazia_project.service.product.ProductService;
 
 import jakarta.validation.Valid;

@@ -1,5 +1,5 @@
 // Supplier.java
-package com.trazia.trazia_project.entity;
+package com.trazia.trazia_project.entity.user;
 
 import jakarta.persistence.*;
 import lombok.*;

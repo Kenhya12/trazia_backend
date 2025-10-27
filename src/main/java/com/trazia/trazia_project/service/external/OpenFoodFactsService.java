@@ -25,6 +25,12 @@ public class OpenFoodFactsService {
     @Value("${openfoodfacts.api.user-agent}")
     private String userAgent;
     
+    @Value("${openfoodfacts.api.timeout-seconds:30}")
+    private int apiTimeoutSeconds;
+
+    @Value("${openfoodfacts.api.retry-delay-seconds:2}")
+    private int retryDelaySeconds;
+    
     public OpenFoodFactsService(@Value("${openfoodfacts.api.base-url}") String baseUrl) {
         // Aumentar límite de buffer a 10 MB
         ExchangeStrategies strategies = ExchangeStrategies.builder()
@@ -39,8 +45,20 @@ public class OpenFoodFactsService {
             .build();
     }
     
+    /**
+     * Busca un producto en Open Food Facts por código de barras.
+     * @param barcode Código de barras del producto.
+     * @return DTO con la información del producto.
+     * @throws IllegalArgumentException si el código de barras es nulo o vacío.
+     * @throws ProductNotFoundException si el producto no se encuentra.
+     * @throws OpenFoodFactsApiException si ocurre un error en la llamada a la API.
+     */
     @Cacheable(value = "openFoodFactsProducts", key = "#barcode")
     public OpenFoodFactsProductDTO searchByBarcode(String barcode) {
+        if (barcode == null || barcode.isBlank()) {
+            throw new IllegalArgumentException("Barcode cannot be null or empty");
+        }
+        long start = System.currentTimeMillis();
         log.info("Searching Open Food Facts for barcode: {}", barcode);
         
         try {
@@ -49,11 +67,13 @@ public class OpenFoodFactsService {
                 .header("User-Agent", userAgent)
                 .retrieve()
                 .bodyToMono(OpenFoodFactsResponseDTO.class)
-                .retryWhen(Retry.backoff(3, Duration.ofSeconds(1))
+                .retryWhen(Retry.backoff(3, Duration.ofSeconds(retryDelaySeconds))
                     .maxBackoff(Duration.ofSeconds(4))
                     .filter(throwable -> !(throwable instanceof ProductNotFoundException)))
-                .timeout(Duration.ofSeconds(30))
+                .timeout(Duration.ofSeconds(apiTimeoutSeconds))
                 .block();
+            
+            log.info("OpenFoodFacts barcode lookup took {} ms", System.currentTimeMillis() - start);
             
             if (response == null || response.getStatus() == 0 || response.getProduct() == null) {
                 log.warn("Product not found in Open Food Facts: {}", barcode);
@@ -64,16 +84,26 @@ public class OpenFoodFactsService {
             return response.getProduct();
             
         } catch (Exception e) {
-            if (e instanceof ProductNotFoundException) {
-                throw e;
-            }
+            if (e instanceof ProductNotFoundException pnf) throw pnf;
             log.error("Error calling Open Food Facts API for barcode {}: {}", barcode, e.getMessage());
             throw new OpenFoodFactsApiException("Failed to search product", e);
         }
     }
     
+    /**
+     * Busca productos en Open Food Facts por nombre.
+     * @param query Término de búsqueda.
+     * @param pageSize Tamaño de página máximo 100.
+     * @return Resultado de búsqueda con lista de productos.
+     * @throws IllegalArgumentException si la consulta es nula o vacía.
+     * @throws OpenFoodFactsApiException si ocurre un error en la llamada a la API.
+     */
     @Cacheable(value = "openFoodFactsSearch", key = "#query + '_' + #pageSize")
     public OpenFoodFactsSearchResultDTO searchByName(String query, int pageSize) {
+        if (query == null || query.isBlank()) {
+            throw new IllegalArgumentException("Search query cannot be null or empty");
+        }
+        long start = System.currentTimeMillis();
         log.info("Searching Open Food Facts for query: {}", query);
         
         final int finalPageSize = Math.min(pageSize, 100);
@@ -89,12 +119,18 @@ public class OpenFoodFactsService {
                 .header("User-Agent", userAgent)
                 .retrieve()
                 .bodyToMono(OpenFoodFactsSearchResultDTO.class)
-                .retryWhen(Retry.backoff(3, Duration.ofSeconds(2)))
-                .timeout(Duration.ofSeconds(30))
+                .retryWhen(Retry.backoff(3, Duration.ofSeconds(retryDelaySeconds)))
+                .timeout(Duration.ofSeconds(apiTimeoutSeconds))
                 .block();
             
+            log.info("OpenFoodFacts name search took {} ms", System.currentTimeMillis() - start);
+            
+            if (result == null) {
+                throw new OpenFoodFactsApiException("No response received from Open Food Facts");
+            }
+            
             log.info("Found {} products for query: {}", 
-                result != null ? result.getCount() : 0, query);
+                result.getCount(), query);
             
             return result;
             
@@ -104,6 +140,3 @@ public class OpenFoodFactsService {
         }
     }
 }
-
-
-

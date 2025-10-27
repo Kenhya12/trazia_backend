@@ -1,9 +1,9 @@
 package com.trazia.trazia_project.service;
 
 import com.trazia.trazia_project.dto.company.CompanyDTO;
-import com.trazia.trazia_project.entity.Company;
+import com.trazia.trazia_project.entity.company.Company;
+import com.trazia.trazia_project.entity.user.User;
 import com.trazia.trazia_project.service.company.CompanyService;
-import com.trazia.trazia_project.entity.User;
 import com.trazia.trazia_project.repository.company.CompanyRepository;
 import com.trazia.trazia_project.repository.user.UserRepository;
 

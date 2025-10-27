@@ -4,7 +4,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.trazia.trazia_project.entity.RawMaterialBatch;
+import com.trazia.trazia_project.entity.batch.RawMaterialBatch;
 import com.trazia.trazia_project.repository.rawmaterial.RawMaterialBatchRepository;
 import com.trazia.trazia_project.service.batch.RawMaterialBatchService;
 

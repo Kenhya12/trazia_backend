@@ -1,8 +1,8 @@
 package com.trazia.trazia_project.controller.rawmaterial;
 
-import com.trazia.trazia_project.entity.RawMaterialBatch;
 import com.trazia.trazia_project.service.batch.RawMaterialBatchService;
 import com.trazia.trazia_project.dto.batch.RawMaterialBatchDTO;
+import com.trazia.trazia_project.entity.batch.RawMaterialBatch;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

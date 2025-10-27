@@ -1,4 +1,6 @@
-package com.trazia.trazia_project.entity;
+package com.trazia.trazia_project.entity.company;
+
+import com.trazia.trazia_project.entity.user.User;
 
 import jakarta.persistence.*;
 import lombok.*;

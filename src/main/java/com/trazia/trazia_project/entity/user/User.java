@@ -1,4 +1,4 @@
-package com.trazia.trazia_project.entity;
+package com.trazia.trazia_project.entity.user;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -6,6 +6,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.trazia.trazia_project.entity.company.Company;
 
 import java.util.Collection;
 import java.util.Collections;

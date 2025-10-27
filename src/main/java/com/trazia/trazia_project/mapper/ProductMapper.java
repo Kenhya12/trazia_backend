@@ -3,8 +3,9 @@ package com.trazia.trazia_project.mapper;
 import com.trazia.trazia_project.dto.product.*;
 import com.trazia.trazia_project.entity.product.Product;
 import com.trazia.trazia_project.entity.product.ProductNutriments;
+import com.trazia.trazia_project.entity.user.User;
 import com.trazia.trazia_project.model.NutrimentsDTO;
-import com.trazia.trazia_project.entity.User;
+
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
@@ -74,7 +75,7 @@ public class ProductMapper {
                 .category(dto.getCategory())
                 .servingSizeGrams(dto.getServingSizeGrams())
                 .servingDescription(dto.getServingDescription())
-                .labelingRegion(dto.getLabelingRegion() != null ? dto.getLabelingRegion() : com.trazia.trazia_project.entity.LabelingRegion.EU)
+                .labelingRegion(dto.getLabelingRegion() != null ? dto.getLabelingRegion() : com.trazia.trazia_project.entity.company.LabelingRegion.EU)
                 .build();
         if (dto.getNutriments() != null) {
             product.setNutriments(toEntityProductNutriments(dto.getNutriments()));

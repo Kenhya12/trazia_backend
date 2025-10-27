@@ -1,9 +1,9 @@
 package com.trazia.trazia_project.service.product;
 
 import com.trazia.trazia_project.dto.product.*;
-import com.trazia.trazia_project.entity.User;
 import com.trazia.trazia_project.entity.product.Product;
 import com.trazia.trazia_project.entity.product.ProductCategory;
+import com.trazia.trazia_project.entity.user.User;
 import com.trazia.trazia_project.exception.product.DuplicateProductException;
 import com.trazia.trazia_project.exception.product.ProductNotFoundException;
 import com.trazia.trazia_project.exception.recipe.ResourceNotFoundException;

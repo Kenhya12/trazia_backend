@@ -1,8 +1,9 @@
 package com.trazia.trazia_project.repository.user;
 
-import com.trazia.trazia_project.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
+import com.trazia.trazia_project.entity.user.User;
 
 import java.util.Optional;
 

@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import com.trazia.trazia_project.entity.FinalProductBatch;
-import com.trazia.trazia_project.entity.RawMaterialBatch;
+import com.trazia.trazia_project.entity.batch.FinalProductBatch;
+import com.trazia.trazia_project.entity.batch.RawMaterialBatch;
 import com.trazia.trazia_project.repository.product.FinalProductBatchRepository;
 import com.trazia.trazia_project.repository.rawmaterial.RawMaterialBatchRepository;
 import com.trazia.trazia_project.service.batch.FinalProductBatchService;

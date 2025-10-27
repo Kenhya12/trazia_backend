@@ -12,10 +12,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.trazia.trazia_project.entity.LabelingRegion;
-import com.trazia.trazia_project.entity.User;
+import com.trazia.trazia_project.entity.company.LabelingRegion;
 import com.trazia.trazia_project.entity.recipe.Recipe;
 import com.trazia.trazia_project.entity.recipe.RecipeIngredient;
+import com.trazia.trazia_project.entity.user.User;
 
 /**
  * Entidad para productos personalizados del usuario

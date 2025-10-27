@@ -1,4 +1,4 @@
-package com.trazia.trazia_project.entity;
+package com.trazia.trazia_project.entity.company;
 
 public enum LabelingRegion {
     EU("European Union", "per 100g/100ml", "kJ/kcal", "salt (g)"),

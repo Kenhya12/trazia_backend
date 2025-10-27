@@ -12,9 +12,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.trazia.trazia_project.entity.User;
-import com.trazia.trazia_project.entity.product.FinalProductLot;
+import com.trazia.trazia_project.entity.batch.FinalProductLot;
 import com.trazia.trazia_project.entity.product.ProductNutriments;
+import com.trazia.trazia_project.entity.user.User;
 
 /**
  * Entidad para recetas personalizadas del usuario

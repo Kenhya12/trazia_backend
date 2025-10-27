@@ -1,9 +1,8 @@
 package com.trazia.trazia_project.controller.company;
 
-import com.trazia.trazia_project.entity.Company;
+import com.trazia.trazia_project.entity.company.Company;
+import com.trazia.trazia_project.entity.user.User;
 import com.trazia.trazia_project.service.company.CompanyService;
-import com.trazia.trazia_project.entity.User;
-
 
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;

@@ -1,4 +1,4 @@
-package com.trazia.trazia_project.entity.product;
+package com.trazia.trazia_project.entity.batch;
 
 import jakarta.persistence.*;
 import lombok.*;

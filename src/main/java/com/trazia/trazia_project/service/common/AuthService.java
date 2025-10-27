@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.trazia.trazia_project.dto.auth.*;
-import com.trazia.trazia_project.entity.User;
+import com.trazia.trazia_project.entity.user.User;
 import com.trazia.trazia_project.exception.auth.InvalidCredentialsException;
 import com.trazia.trazia_project.exception.auth.UserAlreadyExistsException;
 import com.trazia.trazia_project.repository.user.UserRepository;
@@ -31,12 +31,16 @@ public class AuthService {
     public AuthResponse register(RegisterRequest request) {
         log.info("Attempting to register user with email: {}", request.getEmail());
 
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new UserAlreadyExistsException("Email already registered: " + request.getEmail());
-        }
+        boolean emailExists = userRepository.existsByEmail(request.getEmail());
+        boolean usernameExists = userRepository.existsByUsername(request.getUsername());
 
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw new UserAlreadyExistsException("Username already taken: " + request.getUsername());
+        if (emailExists || usernameExists) {
+            StringBuilder message = new StringBuilder("Cannot register user:");
+            if (emailExists)
+                message.append(" email already registered;");
+            if (usernameExists)
+                message.append(" username already taken;");
+            throw new UserAlreadyExistsException(message.toString());
         }
 
         User user = User.builder()
@@ -62,9 +66,7 @@ public class AuthService {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getEmail(),
-                            request.getPassword()
-                    )
-            );
+                            request.getPassword()));
 
             log.info("User authenticated successfully: {}", user.getEmail());
 

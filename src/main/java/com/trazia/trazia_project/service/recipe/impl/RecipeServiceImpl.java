@@ -2,10 +2,10 @@ package com.trazia.trazia_project.service.recipe.impl;
 
 import com.trazia.trazia_project.dto.product.ProductDTO;
 import com.trazia.trazia_project.dto.recipe.*;
-import com.trazia.trazia_project.entity.User;
 import com.trazia.trazia_project.entity.product.Product;
 import com.trazia.trazia_project.entity.recipe.Recipe;
 import com.trazia.trazia_project.entity.recipe.RecipeIngredient;
+import com.trazia.trazia_project.entity.user.User;
 import com.trazia.trazia_project.exception.recipe.ResourceNotFoundException;
 import com.trazia.trazia_project.mapper.ProductMapper;
 import com.trazia.trazia_project.model.NutrimentsDTO;

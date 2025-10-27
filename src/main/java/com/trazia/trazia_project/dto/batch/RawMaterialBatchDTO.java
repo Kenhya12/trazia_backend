@@ -6,7 +6,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import com.trazia.trazia_project.dto.document.DocumentDTO;
-import com.trazia.trazia_project.entity.RawMaterialBatch;
+import com.trazia.trazia_project.entity.batch.RawMaterialBatch;
 
 @Getter
 @Setter

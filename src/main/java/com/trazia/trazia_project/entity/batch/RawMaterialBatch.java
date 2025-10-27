@@ -1,10 +1,13 @@
-package com.trazia.trazia_project.entity;
+package com.trazia.trazia_project.entity.batch;
 
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
 import java.util.List;
+
+import com.trazia.trazia_project.entity.document.Document;
+import com.trazia.trazia_project.entity.user.Supplier;
 
 @Entity
 @Table(name = "raw_material_batches")

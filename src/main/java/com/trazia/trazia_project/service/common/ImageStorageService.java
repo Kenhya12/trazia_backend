@@ -33,10 +33,10 @@ public class ImageStorageService {
     private long maxFileSize;
 
     @Value("${thumbnail.width:200}")
-    private int thumbnailWidth = 200;
+    private int thumbnailWidth;
 
     @Value("${thumbnail.height:200}")
-    private int thumbnailHeight = 200;
+    private int thumbnailHeight;
 
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of("jpg", "jpeg", "png", "gif", "webp");
     private static final Set<String> ALLOWED_MIME_TYPES = Set.of(
@@ -283,6 +283,8 @@ public class ImageStorageService {
      * @return Nombre único generado
      */
     private String generateUniqueFilename(String originalFilename, Long productId) {
+        // Sanitize filename before extracting extension
+        originalFilename = originalFilename.replaceAll("[^a-zA-Z0-9\\.\\-_]", "_");
         String extension = getFileExtension(originalFilename);
         return String.format("%d_%s.%s",
                 productId,

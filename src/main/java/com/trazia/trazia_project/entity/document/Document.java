@@ -1,5 +1,7 @@
 // Document.java
-package com.trazia.trazia_project.entity;
+package com.trazia.trazia_project.entity.document;
+
+import com.trazia.trazia_project.entity.batch.RawMaterialBatch;
 
 import jakarta.persistence.*;
 import lombok.*;
