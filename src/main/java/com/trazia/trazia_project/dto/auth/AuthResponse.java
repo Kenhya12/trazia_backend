@@ -17,6 +17,9 @@ public class AuthResponse {
     
     private String username;
     private String email;
+
+    @Builder.Default
+    private boolean enabled = true; // Agrega este campo
 }
 
 

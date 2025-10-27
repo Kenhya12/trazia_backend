@@ -6,9 +6,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.trazia.trazia_project.dto.AuthResponse;       // ← SIN .auth
-import com.trazia.trazia_project.dto.LoginRequest;      // ← SIN .auth
-import com.trazia.trazia_project.dto.RegisterRequest;   // ← SIN .auth
+import com.trazia.trazia_project.dto.auth.AuthResponse;
+import com.trazia.trazia_project.dto.auth.LoginRequest;
+import com.trazia.trazia_project.dto.auth.RegisterRequest;
 import com.trazia.trazia_project.service.common.AuthService;
 
 import jakarta.validation.Valid;
@@ -39,4 +39,3 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 }
-

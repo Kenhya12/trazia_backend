@@ -2,18 +2,19 @@ package com.trazia.trazia_project.service.batch;
 
 import com.trazia.trazia_project.entity.RawMaterialBatch;
 import com.trazia.trazia_project.repository.rawmaterial.RawMaterialBatchRepository;
+import com.trazia.trazia_project.dto.batch.RawMaterialBatchDTO;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class RawMaterialBatchService {
 
-    @Autowired
-    private RawMaterialBatchRepository rawMaterialBatchRepository;
+    private final RawMaterialBatchRepository rawMaterialBatchRepository;
 
     public RawMaterialBatch saveRawMaterialBatch(RawMaterialBatch batch) {
         if (batch == null) {
@@ -44,7 +45,6 @@ public class RawMaterialBatchService {
         return rawMaterialBatchRepository.save(batch);
     }
 
-    // Método público save() compatible con tests de Mockito
     public RawMaterialBatch save(RawMaterialBatch batch) {
         return rawMaterialBatchRepository.save(batch);
     }
@@ -61,5 +61,24 @@ public class RawMaterialBatchService {
         return rawMaterialBatchRepository.findAll();
     }
 
-    // Otros métodos del servicio según necesidades
+    public RawMaterialBatchDTO convertToDTO(RawMaterialBatch batch) {
+        if (batch == null)
+            return null;
+
+        RawMaterialBatchDTO dto = new RawMaterialBatchDTO();
+        dto.setId(batch.getId());
+        dto.setName(batch.getName());
+        dto.setQuantity(batch.getQuantity());
+        dto.setUnit(batch.getUnit());
+        // Agregar otros campos que necesites mapear
+        return dto;
+    }
+
+    public RawMaterialBatch saveFromDTO(RawMaterialBatchDTO dto) {
+        RawMaterialBatch batch = new RawMaterialBatch();
+        batch.setName(dto.getName());
+        batch.setQuantity(dto.getQuantity());
+        // Agregar otros campos según sea necesario
+        return rawMaterialBatchRepository.save(batch);
+    }
 }

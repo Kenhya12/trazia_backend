@@ -1,4 +1,4 @@
-package com.trazia.trazia_project;
+package com.trazia.trazia_project.mapper;
 
 import com.trazia.trazia_project.entity.product.ProductNutriments;
 import com.trazia.trazia_project.dto.product.NutrimentsRequest;

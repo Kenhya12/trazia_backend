@@ -4,8 +4,6 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.trazia.trazia_project.entity.recipe.RecipeIngredient;
@@ -13,50 +11,41 @@ import com.trazia.trazia_project.entity.recipe.RecipeIngredient;
 @Repository
 public interface RecipeIngredientRepository extends JpaRepository<RecipeIngredient, Long> {
 
-        /**
-         * Encuentra todos los ingredientes de una receta específica
-         * Ordenados por displayOrder
-         */
+/**
+     * Encuentra todos los ingredientes de una receta específica
+     * Ordenados por displayOrder
+     */
         List<RecipeIngredient> findByRecipeIdOrderByDisplayOrderAsc(Long recipeId);
 
-        /**
-         * Encuentra un ingrediente específico de una receta
-         */
-        @Query("SELECT ri FROM RecipeIngredient ri " +
-                        "WHERE ri.recipe.id = :recipeId " +
-                        "AND ri.product.id = :productId")
-        List<RecipeIngredient> findByRecipeIdAndProductId(@Param("recipeId") Long recipeId,
-                        @Param("productId") Long productId);
+/**
+     * Encuentra un ingrediente específico de una receta
+     */
+        List<RecipeIngredient> findByRecipeIdAndProductId(Long recipeId, Long productId);
 
-        /**
-         * Cuenta cuántos ingredientes tiene una receta
-         */
+/**
+     * Cuenta cuántos ingredientes tiene una receta
+     */
         long countByRecipeId(Long recipeId);
 
-        /**
-         * Encuentra todos los ingredientes que usan un producto específico
-         */
+/**
+     * Encuentra todos los ingredientes que usan un producto específico
+     */
         List<RecipeIngredient> findByProductId(Long productId);
 
-        /**
-         * Verifica si un producto está siendo usado en alguna receta
-         */
+/**
+     * Verifica si un producto está siendo usado en alguna receta
+     */
         boolean existsByProductId(Long productId);
 
-        /**
-         * Elimina todos los ingredientes de una receta
-         */
+/**
+     * Elimina todos los ingredientes de una receta
+     */
         @Modifying
-        @Query("DELETE FROM RecipeIngredient ri WHERE ri.recipe.id = :recipeId")
-        void deleteByRecipeId(@Param("recipeId") Long recipeId);
+        void deleteByRecipeId(Long recipeId);
 
-        /**
-         * Elimina un ingrediente específico de una receta
-         */
+/**
+     * Elimina un ingrediente específico de una receta
+     */
         @Modifying
-        @Query("DELETE FROM RecipeIngredient ri " +
-                        "WHERE ri.recipe.id = :recipeId " +
-                        "AND ri.product.id = :productId")
-        void deleteByRecipeIdAndProductId(@Param("recipeId") Long recipeId,
-                        @Param("productId") Long productId);
+        void deleteByRecipeIdAndProductId(Long recipeId, Long productId);
 }

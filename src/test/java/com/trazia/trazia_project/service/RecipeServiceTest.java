@@ -1,6 +1,5 @@
 package com.trazia.trazia_project.service;
 
-import com.trazia.trazia_project.ProductMapperTestUtils;
 import com.trazia.trazia_project.dto.product.ProductDTO;
 import com.trazia.trazia_project.dto.recipe.RecipeIngredientRequest;
 import com.trazia.trazia_project.dto.recipe.RecipePageResponse;
@@ -11,6 +10,7 @@ import com.trazia.trazia_project.entity.recipe.Recipe;
 import com.trazia.trazia_project.entity.recipe.RecipeIngredient;
 import com.trazia.trazia_project.exception.recipe.ResourceNotFoundException;
 import com.trazia.trazia_project.mapper.ProductMapper;
+import com.trazia.trazia_project.mapper.ProductMapperTestUtils;
 import com.trazia.trazia_project.model.NutrimentsDTO;
 import com.trazia.trazia_project.repository.product.ProductRepository;
 import com.trazia.trazia_project.repository.recipe.RecipeIngredientRepository;

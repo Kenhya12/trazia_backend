@@ -10,10 +10,8 @@ import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.Arrays;
-import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -35,18 +33,17 @@ public class ImageStorageService {
     private long maxFileSize;
 
     @Value("${thumbnail.width:200}")
-    private int thumbnailWidth;
+    private int thumbnailWidth = 200;
 
     @Value("${thumbnail.height:200}")
-    private int thumbnailHeight;
+    private int thumbnailHeight = 200;
 
-    private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList("jpg", "jpeg", "png", "gif", "webp");
-    private static final List<String> ALLOWED_MIME_TYPES = Arrays.asList(
-        "image/jpeg", 
-        "image/png", 
-        "image/gif", 
-        "image/webp"
-    );
+    private static final Set<String> ALLOWED_EXTENSIONS = Set.of("jpg", "jpeg", "png", "gif", "webp");
+    private static final Set<String> ALLOWED_MIME_TYPES = Set.of(
+            "image/jpeg",
+            "image/png",
+            "image/gif",
+            "image/webp");
 
     /**
      * Crea los directorios necesarios al iniciar el servicio
@@ -54,8 +51,8 @@ public class ImageStorageService {
     @PostConstruct
     public void init() {
         try {
-            Files.createDirectories(Paths.get(uploadDir));
-            Files.createDirectories(Paths.get(thumbnailDir));
+            Files.createDirectories(Path.of(uploadDir));
+            Files.createDirectories(Path.of(thumbnailDir));
             log.info("Image storage directories created: {} and {}", uploadDir, thumbnailDir);
         } catch (IOException e) {
             log.error("Failed to create storage directories", e);
@@ -66,28 +63,23 @@ public class ImageStorageService {
     /**
      * Almacena una imagen y genera su thumbnail
      * 
-     * @param file Archivo MultipartFile subido
+     * @param file      Archivo MultipartFile subido
      * @param productId ID del producto para nombre único
      * @return Nombre del archivo guardado
-     * @throws IOException Si hay error en el almacenamiento
+     * @throws IOException              Si hay error en el almacenamiento
      * @throws IllegalArgumentException Si el archivo no es válido
      */
     public String storeImage(MultipartFile file, Long productId) throws IOException {
         log.debug("Storing image for product ID: {}", productId);
-        
+
         // Validar archivo
-        validateFile(file);
+        validateFileSizeAndType(file);
 
         // Generar nombre único
-        String originalFilename = file.getOriginalFilename();
-        String extension = getFileExtension(originalFilename);
-        String uniqueFilename = String.format("%d_%s.%s", 
-                productId, 
-                UUID.randomUUID().toString(), 
-                extension);
+        String uniqueFilename = generateUniqueFilename(file.getOriginalFilename(), productId);
 
         // Guardar imagen original
-        Path destinationFile = Paths.get(uploadDir).resolve(uniqueFilename);
+        Path destinationFile = Path.of(uploadDir, uniqueFilename);
         Files.copy(file.getInputStream(), destinationFile, StandardCopyOption.REPLACE_EXISTING);
         log.info("Image saved: {}", uniqueFilename);
 
@@ -108,18 +100,18 @@ public class ImageStorageService {
      * Crea un thumbnail de la imagen usando Thumbnailator
      * 
      * @param originalPath Path de la imagen original
-     * @param filename Nombre del archivo
+     * @param filename     Nombre del archivo
      * @throws IOException Si hay error al crear thumbnail
      */
     private void createThumbnail(Path originalPath, String filename) throws IOException {
-        Path thumbnailPath = Paths.get(thumbnailDir).resolve("thumb_" + filename);
-        
+        Path thumbnailPath = Path.of(thumbnailDir, "thumb_" + filename);
+
         Thumbnails.of(originalPath.toFile())
                 .size(thumbnailWidth, thumbnailHeight)
                 .keepAspectRatio(true)
                 .outputQuality(0.85)
                 .toFile(thumbnailPath.toFile());
-        
+
         log.debug("Thumbnail created: thumb_{}", filename);
     }
 
@@ -132,14 +124,14 @@ public class ImageStorageService {
      */
     public byte[] loadImage(String filename) throws IOException {
         log.debug("Loading image: {}", filename);
-        
-        Path filePath = Paths.get(uploadDir).resolve(filename);
-        
+
+        Path filePath = Path.of(uploadDir, filename);
+
         if (!Files.exists(filePath)) {
             log.warn("Image not found: {}", filename);
-            throw new IOException("Image not found: " + filename);
+            throw new ImageNotFoundException("Image not found: " + filename);
         }
-        
+
         return Files.readAllBytes(filePath);
     }
 
@@ -152,14 +144,14 @@ public class ImageStorageService {
      */
     public byte[] loadThumbnail(String filename) throws IOException {
         log.debug("Loading thumbnail: thumb_{}", filename);
-        
-        Path thumbnailPath = Paths.get(thumbnailDir).resolve("thumb_" + filename);
-        
+
+        Path thumbnailPath = Path.of(thumbnailDir, "thumb_" + filename);
+
         if (!Files.exists(thumbnailPath)) {
             log.warn("Thumbnail not found: thumb_{}", filename);
-            throw new IOException("Thumbnail not found: thumb_" + filename);
+            throw new ImageNotFoundException("Thumbnail not found: thumb_" + filename);
         }
-        
+
         return Files.readAllBytes(thumbnailPath);
     }
 
@@ -178,9 +170,9 @@ public class ImageStorageService {
         log.info("Deleting image: {}", filename);
 
         // Eliminar imagen original
-        Path imagePath = Paths.get(uploadDir).resolve(filename);
+        Path imagePath = Path.of(uploadDir, filename);
         boolean imageDeleted = Files.deleteIfExists(imagePath);
-        
+
         if (imageDeleted) {
             log.debug("Image deleted: {}", filename);
         } else {
@@ -188,9 +180,9 @@ public class ImageStorageService {
         }
 
         // Eliminar thumbnail
-        Path thumbnailPath = Paths.get(thumbnailDir).resolve("thumb_" + filename);
+        Path thumbnailPath = Path.of(thumbnailDir, "thumb_" + filename);
         boolean thumbnailDeleted = Files.deleteIfExists(thumbnailPath);
-        
+
         if (thumbnailDeleted) {
             log.debug("Thumbnail deleted: thumb_{}", filename);
         } else {
@@ -208,7 +200,7 @@ public class ImageStorageService {
         if (filename == null || filename.isEmpty()) {
             return false;
         }
-        Path filePath = Paths.get(uploadDir).resolve(filename);
+        Path filePath = Path.of(uploadDir, filename);
         return Files.exists(filePath);
     }
 
@@ -220,9 +212,9 @@ public class ImageStorageService {
      * @throws IOException Si el archivo no existe
      */
     public long getImageSize(String filename) throws IOException {
-        Path filePath = Paths.get(uploadDir).resolve(filename);
+        Path filePath = Path.of(uploadDir, filename);
         if (!Files.exists(filePath)) {
-            throw new IOException("Image not found: " + filename);
+            throw new ImageNotFoundException("Image not found: " + filename);
         }
         return Files.size(filePath);
     }
@@ -233,7 +225,7 @@ public class ImageStorageService {
      * @param file Archivo a validar
      * @throws IllegalArgumentException Si el archivo no es válido
      */
-    private void validateFile(MultipartFile file) {
+    private void validateFileSizeAndType(MultipartFile file) {
         // Validar que no esté vacío
         if (file.isEmpty()) {
             log.warn("Upload attempt with empty file");
@@ -244,8 +236,7 @@ public class ImageStorageService {
         if (file.getSize() > maxFileSize) {
             log.warn("File size {} exceeds maximum {}", file.getSize(), maxFileSize);
             throw new IllegalArgumentException(
-                String.format("File size exceeds maximum allowed size of %d MB", maxFileSize / 1024 / 1024)
-            );
+                    String.format("File size exceeds maximum allowed size of %d MB", maxFileSize / 1024 / 1024));
         }
 
         // Validar extensión
@@ -253,13 +244,12 @@ public class ImageStorageService {
         if (filename == null || filename.isEmpty()) {
             throw new IllegalArgumentException("Invalid filename");
         }
-        
+
         String extension = getFileExtension(filename).toLowerCase();
         if (!ALLOWED_EXTENSIONS.contains(extension)) {
             log.warn("Invalid file extension: {}", extension);
             throw new IllegalArgumentException(
-                "Invalid file type. Allowed types: " + String.join(", ", ALLOWED_EXTENSIONS)
-            );
+                    "Invalid file type. Allowed types: " + String.join(", ", ALLOWED_EXTENSIONS));
         }
 
         // Validar MIME type
@@ -267,8 +257,7 @@ public class ImageStorageService {
         if (contentType == null || !ALLOWED_MIME_TYPES.contains(contentType.toLowerCase())) {
             log.warn("Invalid content type: {}", contentType);
             throw new IllegalArgumentException(
-                "Invalid file type. File must be an image (JPEG, PNG, GIF, WebP)"
-            );
+                    "Invalid file type. File must be an image (JPEG, PNG, GIF, WebP)");
         }
     }
 
@@ -287,6 +276,21 @@ public class ImageStorageService {
     }
 
     /**
+     * Genera un nombre único para el archivo
+     * 
+     * @param originalFilename Nombre original del archivo
+     * @param productId        ID del producto
+     * @return Nombre único generado
+     */
+    private String generateUniqueFilename(String originalFilename, Long productId) {
+        String extension = getFileExtension(originalFilename);
+        return String.format("%d_%s.%s",
+                productId,
+                UUID.randomUUID().toString(),
+                extension);
+    }
+
+    /**
      * Obtiene el tipo MIME basado en la extensión
      * 
      * @param filename Nombre del archivo
@@ -302,5 +306,10 @@ public class ImageStorageService {
             default -> "application/octet-stream";
         };
     }
-}
 
+    public static class ImageNotFoundException extends IOException {
+        public ImageNotFoundException(String message) {
+            super(message);
+        }
+    }
+}

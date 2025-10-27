@@ -6,9 +6,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.trazia.trazia_project.dto.AuthResponse;
-import com.trazia.trazia_project.dto.LoginRequest;
-import com.trazia.trazia_project.dto.RegisterRequest;
+import com.trazia.trazia_project.dto.auth.*;
 import com.trazia.trazia_project.entity.User;
 import com.trazia.trazia_project.exception.auth.InvalidCredentialsException;
 import com.trazia.trazia_project.exception.auth.UserAlreadyExistsException;
@@ -84,6 +82,7 @@ public class AuthService {
                 .token(token)
                 .username(user.getUsername())
                 .email(user.getEmail())
+                .enabled(user.isEnabled()) // Assuming enabled is part of AuthResponse now
                 .build();
     }
 }

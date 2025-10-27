@@ -2,49 +2,50 @@ package com.trazia.trazia_project.controller.rawmaterial;
 
 import com.trazia.trazia_project.entity.RawMaterialBatch;
 import com.trazia.trazia_project.service.batch.RawMaterialBatchService;
+import com.trazia.trazia_project.dto.batch.RawMaterialBatchDTO;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
-
-import java.util.Optional;
+import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/raw-material-batches")
+@RequiredArgsConstructor
 public class RawMaterialBatchController {
 
     private final RawMaterialBatchService rawMaterialBatchService;
 
-    public RawMaterialBatchController(RawMaterialBatchService rawMaterialBatchService) {
-        this.rawMaterialBatchService = rawMaterialBatchService;
-    }
-
     @GetMapping("/{id}")
-    public ResponseEntity<RawMaterialBatch> getBatchById(@PathVariable Long id) {
-        Optional<RawMaterialBatch> batch = rawMaterialBatchService.findById(id);
-        if (batch.isPresent()) {
-            return ResponseEntity.ok(batch.get());
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<RawMaterialBatchDTO> getBatchById(@PathVariable Long id) {
+        // Buscar la entidad
+        return rawMaterialBatchService.findById(id)
+                .map(batch -> {
+                    RawMaterialBatchDTO dto = rawMaterialBatchService.convertToDTO(batch);
+                    return ResponseEntity.ok(dto);
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    // Endpoint para crear un nuevo lote de materia prima
     @PostMapping
-public ResponseEntity<RawMaterialBatch> createRawMaterialBatch(@RequestBody RawMaterialBatch batch) {
-    RawMaterialBatch savedBatch = rawMaterialBatchService.save(batch);
-
-    if (savedBatch == null) {
-        return ResponseEntity.badRequest().build();
+    public ResponseEntity<RawMaterialBatchDTO> createRawMaterialBatch(@Valid @RequestBody RawMaterialBatchDTO batchDto) {
+        RawMaterialBatch savedBatch = rawMaterialBatchService.saveFromDTO(batchDto);
+        if (savedBatch == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        RawMaterialBatchDTO dto = rawMaterialBatchService.convertToDTO(savedBatch);
+        return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
-    // ✅ Devuelve el objeto creado en el cuerpo y código HTTP 201
-    return ResponseEntity.status(HttpStatus.CREATED).body(savedBatch);
-}
-    // Endpoint para obtener todos los lotes (opcional, para pruebas)
     @GetMapping
-    public ResponseEntity<java.util.List<RawMaterialBatch>> getAllBatches() {
-        return ResponseEntity.ok(rawMaterialBatchService.getAllBatches());
+    public ResponseEntity<List<RawMaterialBatchDTO>> getAllBatches() {
+        List<RawMaterialBatch> batches = rawMaterialBatchService.getAllBatches();
+        List<RawMaterialBatchDTO> dtoList = batches.stream()
+                .map(rawMaterialBatchService::convertToDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtoList);
     }
-
 }

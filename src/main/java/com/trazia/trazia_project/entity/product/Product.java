@@ -1,9 +1,7 @@
 package com.trazia.trazia_project.entity.product;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -12,6 +10,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import com.trazia.trazia_project.entity.LabelingRegion;
 import com.trazia.trazia_project.entity.User;
@@ -26,11 +25,11 @@ import com.trazia.trazia_project.entity.recipe.RecipeIngredient;
 @Entity
 @Table(name = "products", uniqueConstraints = @UniqueConstraint(name = "uk_user_product_name", columnNames = {
         "user_id", "name" }), indexes = {
-                @Index(name = "idx_user_id", columnList = "user_id"),
-                @Index(name = "idx_category", columnList = "category"),
-                @Index(name = "idx_created_at", columnList = "created_at"),
-                @Index(name = "idx_deleted", columnList = "deleted")
-        })
+        @Index(name = "idx_user_id", columnList = "user_id"),
+        @Index(name = "idx_category", columnList = "category"),
+        @Index(name = "idx_created_at", columnList = "created_at"),
+        @Index(name = "idx_deleted", columnList = "deleted")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -42,255 +41,217 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * Usuario creador del producto
-     */
+    /** Usuario creador del producto */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     @ToString.Exclude
     private User user;
 
     /**
-     * Lista de ingredientes de recetas que usan este producto
-     * Relación bidireccional para rastrear el uso del producto en recetas
+     * Lista de ingredientes de recetas que usan este producto.
+     * Relación inversa para saber en qué recetas está presente este producto.
      */
     @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
     @Builder.Default
     @ToString.Exclude
     private List<RecipeIngredient> recipeIngredients = new ArrayList<>();
 
-    /**
-     * Nombre del producto
-     */
+    /** Nombre del producto */
     @NotBlank(message = "Product name is required")
     @Size(min = 3, max = 150, message = "Product name must be between 3 and 150 characters")
     @Column(nullable = false, length = 150)
     private String name;
 
-    /**
-     * Descripción opcional del producto
-     */
-    @Size(max = 1000, message = "Description cannot exceed 1000 characters")
+    /** Descripción opcional */
+    @Size(max = 1000)
     @Column(length = 1000)
     private String description;
 
-    /**
-     * Marca opcional del producto
-     */
-    @Size(max = 100, message = "Brand name cannot exceed 100 characters")
+    /** Marca opcional */
+    @Size(max = 100)
     @Column(length = 100)
     private String brand;
 
     /**
-     * Alérgenos del producto (opcional, lista de strings)
-     * Podría normalizarse en otra tabla en el futuro
+     * Alérgenos del producto.
+     * @TODO: Normalizar a entidad propia en el futuro para evitar duplicados y facilitar búsquedas.
      */
     @ElementCollection
     @CollectionTable(name = "product_allergens", joinColumns = @JoinColumn(name = "product_id"))
     @Column(name = "allergen", length = 100)
+    @Builder.Default
     private List<String> allergens = new ArrayList<>();
+    // TODO: Consider normalizing allergens to a separate entity to avoid duplicates and simplify searches.
 
-    /**
-     * Categoría del producto
-     */
-    @NotNull(message = "Category is required")
+    /** Categoría */
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private ProductCategory category;
 
-    /**
-     * NUEVOS CAMPOS PARA IMÁGENES
-     */
-
-    /**
-     * Nombre del archivo de imagen almacenado
-     * Ejemplo: "123_uuid.jpg"
-     */
+    /** Imágenes */
     @Column(name = "image_path", length = 255)
     private String imagePath;
 
-    /**
-     * Nombre del archivo thumbnail
-     * Ejemplo: "thumb_123_uuid.jpg"
-     */
     @Column(name = "thumbnail_path", length = 255)
     private String thumbnailPath;
 
-    /**
-     * URL pública de la imagen (generada dinámicamente)
-     * No se persiste en BD, se calcula en runtime
-     */
     @Transient
     private String imageUrl;
 
     /**
-     * Información nutricional por 100g
+     * Información nutricional del producto.
      */
     @Embedded
     private ProductNutriments nutriments;
 
-    /**
-     * Tamaño de porción en gramos (opcional)
-     * Usado para conversión de nutrimentos
-     */
+    /** Tamaño de porción en gramos */
+    @Min(0)
     @Column(name = "serving_size_grams")
     private Integer servingSizeGrams;
 
-    /**
-     * Costo por unidad (por kg) del producto
-     * Usado para calcular el costo total de recetas
-     */
+    /** Costo por unidad (kg) */
+    @DecimalMin(value = "0.0", inclusive = false)
     @Column(name = "cost_per_unit")
     private BigDecimal costPerUnit;
 
-    /**
-     * Descripción opcional del tamaño de porción (ej: "1 taza", "1 rebanada")
-     */
-    @Size(max = 100, message = "Serving description cannot exceed 100 characters")
+    /** Descripción del tamaño de porción */
+    @Size(max = 100)
     @Column(name = "serving_description", length = 100)
     private String servingDescription;
 
-    /**
-     * Región de etiquetado nutricional
-     */
+    /** Región de etiquetado */
     @Enumerated(EnumType.STRING)
     @Builder.Default
     @Column(name = "labeling_region", length = 10, nullable = false)
     private LabelingRegion labelingRegion = LabelingRegion.EU;
 
-    /**
-    * Indicador de eliminación lógica
-    */
+    /** Eliminación lógica */
     @Builder.Default
     @Column(nullable = false)
     private Boolean deleted = false;
 
-    /**
-     * Timestamps de creación y actualización
-     */
+    /** Timestamps */
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    /**
-     * Timestamps de creación y actualización
-     */
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    // ---------- MÉTODOS ----------
+
+    /**
+     * Marca el producto como eliminado lógicamente.
+     */
     public void markAsDeleted() {
         this.deleted = true;
-        this.updatedAt = LocalDateTime.now();
+        // El timestamp se actualizará automáticamente por @UpdateTimestamp
     }
 
+    /**
+     * Restaura el producto eliminando la marca de eliminado.
+     */
     public void restore() {
         this.deleted = false;
-        this.updatedAt = LocalDateTime.now();
+        // El timestamp se actualizará automáticamente por @UpdateTimestamp
     }
 
+    /**
+     * Verifica si el producto pertenece a un usuario dado.
+     * @param userId ID del usuario
+     * @return true si pertenece al usuario, false de lo contrario
+     */
     public boolean belongsToUser(Long userId) {
         return this.user != null && this.user.getId().equals(userId);
     }
 
-    public ProductNutriments getNutrimentsPerServing() {
-        if (nutriments == null) {
-            return null;
-        }
-        if (servingSizeGrams != null && servingSizeGrams > 0) {
-            return nutriments.convertToServingSize(servingSizeGrams);
-        }
-        return nutriments;
+    /**
+     * Obtiene los nutrimentos convertidos a tamaño de porción si aplica.
+     * @return Optional con ProductNutriments convertido o vacío si no hay nutrimentos
+     */
+    public Optional<ProductNutriments> getNutrimentsPerServing() {
+        return Optional.ofNullable(nutriments)
+                .map(n -> (servingSizeGrams != null && servingSizeGrams > 0) ? n.convertToServingSize(servingSizeGrams) : n);
     }
 
+    /**
+     * Verifica si el producto tiene información nutricional completa.
+     * @return true si tiene calorías, proteínas, carbohidratos y grasas definidos
+     */
     public boolean hasCompleteNutritionInfo() {
-        if (nutriments == null) {
-            return false;
-        }
-        return nutriments.getCalories() != null &&
+        return nutriments != null &&
+                nutriments.getCalories() != null &&
                 nutriments.getProtein() != null &&
                 nutriments.getCarbohydrates() != null &&
                 nutriments.getFat() != null;
     }
 
     /**
-     * NUEVOS MÉTODOS PARA IMÁGENES
-     */
-
-    /**
-     * Verifica si el producto tiene imagen
+     * Verifica si el producto tiene una imagen asociada.
+     * @return true si tiene imagen, false de lo contrario
      */
     public boolean hasImage() {
-        return imagePath != null && !imagePath.isEmpty();
+        return imagePath != null && !imagePath.isBlank();
     }
 
     /**
-     * Actualiza la ruta de la imagen
+     * Actualiza la ruta de la imagen y su thumbnail.
+     * @param newImagePath nueva ruta de la imagen
      */
     public void updateImage(String newImagePath) {
         this.imagePath = newImagePath;
         this.thumbnailPath = "thumb_" + newImagePath;
-        this.updatedAt = LocalDateTime.now();
+        // El timestamp se actualizará automáticamente por @UpdateTimestamp
     }
 
     /**
-     * Elimina la imagen del producto
+     * Elimina la imagen y el thumbnail asociados al producto.
      */
     public void removeImage() {
         this.imagePath = null;
         this.thumbnailPath = null;
         this.imageUrl = null;
-        this.updatedAt = LocalDateTime.now();
+        // El timestamp se actualizará automáticamente por @UpdateTimestamp
     }
 
     /**
-     * Genera la URL pública de la imagen
+     * Obtiene la URL pública de la imagen del producto.
+     * Si no se ha definido manualmente, la genera al vuelo a partir del id y baseUrl.
+     * @param baseUrl URL base del servidor
+     * @return URL pública de la imagen, o null si no hay imagen
      */
-    public void generateImageUrl(String baseUrl) {
-        if (hasImage()) {
-            this.imageUrl = baseUrl + "/api/products/" + this.id + "/image";
+    public String getImageUrl(String baseUrl) {
+        if (!hasImage() || baseUrl == null || id == null) {
+            return null;
         }
+        return baseUrl + "/api/products/" + this.id + "/image";
     }
 
     /**
-     * Verifica si el producto está siendo usado en alguna receta activa
+     * Verifica si el producto está siendo usado en alguna receta activa.
+     * @return true si está en uso, false si no
      */
     public boolean isUsedInRecipes() {
-        return recipeIngredients != null && !recipeIngredients.isEmpty();
+        return !recipeIngredients.isEmpty();
     }
 
     /**
-     * Cuenta cuántas recetas usan este producto
+     * Obtiene el número de recetas que usan este producto.
+     * @return cantidad de recetas
      */
     public int getRecipeUsageCount() {
-        return recipeIngredients != null ? recipeIngredients.size() : 0;
+        return recipeIngredients.size();
     }
 
     /**
-     * Verifica si se puede eliminar el producto
-     * (solo si no está en uso o las recetas están marcadas como eliminadas)
+     * Verifica si el producto puede ser eliminado.
+     * Solo si no está en uso o todas las recetas que lo usan están marcadas como eliminadas.
+     * @return true si puede eliminarse, false de lo contrario
      */
     public boolean canBeDeleted() {
-        if (recipeIngredients == null || recipeIngredients.isEmpty()) {
-            return true;
-        }
-
-        return recipeIngredients.stream()
-                .map(RecipeIngredient::getRecipe)
-                .allMatch(recipe -> recipe.getDeleted());
-    }
-
-    /**
-     * Verifica si se puede eliminar el producto de forma segura
-     * (solo si no está en uso en recetas activas)
-     */
-    public boolean canBeDeletedSafely() {
-        if (recipeIngredients == null || recipeIngredients.isEmpty()) {
-            return true;
-        }
-
-        // Permitir eliminación solo si todas las recetas que lo usan están eliminadas
-        return recipeIngredients.stream()
+        return recipeIngredients.isEmpty() || recipeIngredients.stream()
                 .map(RecipeIngredient::getRecipe)
                 .allMatch(Recipe::getDeleted);
     }
