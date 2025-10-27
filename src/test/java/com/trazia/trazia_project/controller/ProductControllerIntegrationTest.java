@@ -1,9 +1,11 @@
 package com.trazia.trazia_project.controller;
 
+import com.trazia.trazia_project.controller.product.ProductController;
 import com.trazia.trazia_project.dto.product.ProductResponse;
-import com.trazia.trazia_project.service.ProductService;
 import com.trazia.trazia_project.security.JwtAuthenticationFilter;
 import com.trazia.trazia_project.security.JwtTokenProvider;
+import com.trazia.trazia_project.service.product.ProductService;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;

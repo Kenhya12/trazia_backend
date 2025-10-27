@@ -1,10 +1,12 @@
 package com.trazia.trazia_project.controller;
 
+import com.trazia.trazia_project.controller.recipe.RecipeController;
 import com.trazia.trazia_project.dto.recipe.LabelPrintDTO;
 import com.trazia.trazia_project.dto.recipe.RecipeRequest;
 import com.trazia.trazia_project.dto.recipe.RecipeResponse;
-import com.trazia.trazia_project.exception.ResourceNotFoundException;
-import com.trazia.trazia_project.service.RecipeService;
+import com.trazia.trazia_project.exception.recipe.ResourceNotFoundException;
+import com.trazia.trazia_project.service.recipe.RecipeService;
+
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.http.HttpStatus;

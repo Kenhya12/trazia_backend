@@ -66,8 +66,8 @@ public class Recipe {
      */
     @NotNull(message = "Yield weight is required")
     @Positive(message = "Yield weight must be positive")
-    @Column(name = "yield_weight_grams", nullable = false)
-    private Double yieldWeightGrams;
+    @Column(name = "yield_weight_grams", nullable = false, precision = 10, scale = 2)
+    private BigDecimal yieldWeightGrams;
 
     /**
      * Descripción opcional del rendimiento (ej: "8 porciones", "12 galletas")
@@ -127,25 +127,35 @@ public class Recipe {
      * Añade un ingrediente a la receta
      */
     public void addIngredient(RecipeIngredient ingredient) {
-        ingredients.add(ingredient);
-        ingredient.setRecipe(this);
+        if (ingredient != null) {
+            if (ingredients == null) {
+                ingredients = new ArrayList<>();
+            }
+            ingredients.add(ingredient);
+            ingredient.setRecipe(this);
+        }
     }
 
     /**
      * Elimina un ingrediente de la receta
      */
     public void removeIngredient(RecipeIngredient ingredient) {
-        ingredients.remove(ingredient);
-        ingredient.setRecipe(null);
+        if (ingredient != null && ingredients != null) {
+            ingredients.remove(ingredient);
+            ingredient.setRecipe(null);
+        }
     }
 
     /**
      * Calcula el peso total de ingredientes
      */
-    public Double getTotalIngredientsWeight() {
+    public BigDecimal getTotalIngredientsWeight() {
+        if (ingredients == null) {
+            return BigDecimal.ZERO;
+        }
         return ingredients.stream()
-                .mapToDouble(i -> i.getQuantityGrams() != null ? i.getQuantityGrams().doubleValue() : 0.0)
-                .sum();
+                .map(i -> i.getQuantityGrams() != null ? i.getQuantityGrams() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     };
 
     /**
@@ -158,11 +168,11 @@ public class Recipe {
     @Embedded
     private ProductNutriments nutrimentsPor100g;
 
-    public ProductNutriments getNutrimentsPor100g() {
-        return nutrimentsPor100g;
+    public String getUsageInstructionsSafe() {
+        return usageInstructions != null ? usageInstructions : "";
     }
 
-    public void setNutrimentsPor100g(ProductNutriments nutrimentsPor100g) {
-        this.nutrimentsPor100g = nutrimentsPor100g;
+    public FinalProductLot getFinalProductLotSafe() {
+        return finalProductLot != null ? finalProductLot : null;
     }
 }

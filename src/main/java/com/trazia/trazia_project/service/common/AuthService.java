@@ -1,0 +1,89 @@
+package com.trazia.trazia_project.service.common;
+
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.trazia.trazia_project.dto.AuthResponse;
+import com.trazia.trazia_project.dto.LoginRequest;
+import com.trazia.trazia_project.dto.RegisterRequest;
+import com.trazia.trazia_project.entity.User;
+import com.trazia.trazia_project.exception.auth.InvalidCredentialsException;
+import com.trazia.trazia_project.exception.auth.UserAlreadyExistsException;
+import com.trazia.trazia_project.repository.user.UserRepository;
+import com.trazia.trazia_project.security.JwtTokenProvider;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+@Transactional(readOnly = true)
+public class AuthService {
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final AuthenticationManager authenticationManager;
+
+    @Transactional
+    public AuthResponse register(RegisterRequest request) {
+        log.info("Attempting to register user with email: {}", request.getEmail());
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new UserAlreadyExistsException("Email already registered: " + request.getEmail());
+        }
+
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new UserAlreadyExistsException("Username already taken: " + request.getUsername());
+        }
+
+        User user = User.builder()
+                .username(request.getUsername())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .enabled(true)
+                .build();
+
+        User savedUser = userRepository.save(user);
+        log.info("User registered successfully with email: {}", savedUser.getEmail());
+
+        return buildAuthResponse(savedUser);
+    }
+
+    public AuthResponse login(LoginRequest request) {
+        log.info("Login attempt for email: {}", request.getEmail());
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new InvalidCredentialsException("Invalid email or password"));
+
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getEmail(),
+                            request.getPassword()
+                    )
+            );
+
+            log.info("User authenticated successfully: {}", user.getEmail());
+
+            return buildAuthResponse(user);
+
+        } catch (Exception e) {
+            log.error("Authentication failed for email: {}", request.getEmail());
+            throw new InvalidCredentialsException("Invalid email or password");
+        }
+    }
+
+    private AuthResponse buildAuthResponse(User user) {
+        String token = jwtTokenProvider.generateToken(user);
+        return AuthResponse.builder()
+                .token(token)
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .build();
+    }
+}

@@ -9,12 +9,14 @@ import com.trazia.trazia_project.dto.recipe.RecipeResponse;
 import com.trazia.trazia_project.entity.product.Product;
 import com.trazia.trazia_project.entity.recipe.Recipe;
 import com.trazia.trazia_project.entity.recipe.RecipeIngredient;
-import com.trazia.trazia_project.exception.ResourceNotFoundException;
+import com.trazia.trazia_project.exception.recipe.ResourceNotFoundException;
 import com.trazia.trazia_project.mapper.ProductMapper;
 import com.trazia.trazia_project.model.NutrimentsDTO;
-import com.trazia.trazia_project.repository.ProductRepository;
-import com.trazia.trazia_project.repository.RecipeIngredientRepository;
-import com.trazia.trazia_project.repository.RecipeRepository;
+import com.trazia.trazia_project.repository.product.ProductRepository;
+import com.trazia.trazia_project.repository.recipe.RecipeIngredientRepository;
+import com.trazia.trazia_project.repository.recipe.RecipeRepository;
+import com.trazia.trazia_project.service.common.NutritionConversionService;
+import com.trazia.trazia_project.service.recipe.RecipeService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

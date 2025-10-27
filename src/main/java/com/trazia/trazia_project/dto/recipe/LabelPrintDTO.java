@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -20,6 +21,11 @@ public class LabelPrintDTO {
     private String companyName;
     private String companyAddress;
     private String countryOfOrigin;
+    private String legalDisclaimer;
+
+    // Campos de receta
+    private String recipeName;
+    private String recipeDescription;
 
     // Información de trazabilidad
     private String batchNumber;
@@ -28,8 +34,9 @@ public class LabelPrintDTO {
     private String usageInstructions;
     
     // Ingredientes y alérgenos
-    private String ingredients;
-    private java.util.List<String> allergens;
+    private String ingredients; // Raw concatenated string for label display
+    private List<String> ingredientsList; // List of ingredient names for internal use
+    private List<String> allergens;
 
     // Información nutricional por 100g
     private BigDecimal energyPer100g;
@@ -50,6 +57,7 @@ public class LabelPrintDTO {
     private BigDecimal dvSugars;
     private BigDecimal dvProteins;
     private BigDecimal dvSalt;
+    private BigDecimal yieldWeightGrams;
 
     // Etiquetas de dieta / estilo de vida
     private boolean vegan;
@@ -71,11 +79,5 @@ public class LabelPrintDTO {
     private String qrCode;
     private String nutriScore;
 
-    // Campos de receta
-    private String recipeName;
-    private String recipeDescription;
-    private String ingredientsList;
-    private BigDecimal yieldWeightGrams;
-    private String legalDisclaimer;
 
 }

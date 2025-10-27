@@ -3,8 +3,9 @@ package com.trazia.trazia_project.service.company;
 import com.trazia.trazia_project.dto.company.CompanyDTO;
 import com.trazia.trazia_project.entity.Company;
 import com.trazia.trazia_project.entity.User;
-import com.trazia.trazia_project.repository.CompanyRepository;
-import com.trazia.trazia_project.repository.UserRepository;
+import com.trazia.trazia_project.repository.company.CompanyRepository;
+import com.trazia.trazia_project.repository.user.UserRepository;
+
 import org.springframework.security.access.AccessDeniedException;
 
 import jakarta.persistence.EntityNotFoundException;

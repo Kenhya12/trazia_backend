@@ -16,11 +16,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.trazia.trazia_project.controller.product.ProductController;
 import com.trazia.trazia_project.dto.product.ProductRequest;
 import com.trazia.trazia_project.dto.product.UpdateProductRequest;
 import com.trazia.trazia_project.dto.product.ProductResponse;
 import com.trazia.trazia_project.entity.product.ProductCategory;
-import com.trazia.trazia_project.service.ProductService;
+import com.trazia.trazia_project.service.product.ProductService;
 
 import java.util.Arrays;
 import java.util.List;

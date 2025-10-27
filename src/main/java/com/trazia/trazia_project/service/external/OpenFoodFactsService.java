@@ -1,10 +1,11 @@
 package com.trazia.trazia_project.service.external;
 
-import com.trazia.trazia_project.dto.openfoodfacts.OpenFoodFactsProductDTO;
-import com.trazia.trazia_project.dto.openfoodfacts.OpenFoodFactsResponseDTO;
-import com.trazia.trazia_project.dto.openfoodfacts.OpenFoodFactsSearchResultDTO;
-import com.trazia.trazia_project.exception.OpenFoodFactsApiException;
-import com.trazia.trazia_project.exception.ProductNotFoundException;
+import com.trazia.trazia_project.dto.external.openfoodfacts.OpenFoodFactsProductDTO;
+import com.trazia.trazia_project.dto.external.openfoodfacts.OpenFoodFactsResponseDTO;
+import com.trazia.trazia_project.dto.external.openfoodfacts.OpenFoodFactsSearchResultDTO;
+import com.trazia.trazia_project.exception.product.OpenFoodFactsApiException;
+import com.trazia.trazia_project.exception.product.ProductNotFoundException;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;

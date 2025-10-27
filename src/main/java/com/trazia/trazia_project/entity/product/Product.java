@@ -5,7 +5,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -80,6 +83,7 @@ public class Product {
 
     /**
      * Alérgenos del producto (opcional, lista de strings)
+     * Podría normalizarse en otra tabla en el futuro
      */
     @ElementCollection
     @CollectionTable(name = "product_allergens", joinColumns = @JoinColumn(name = "product_id"))
@@ -132,12 +136,12 @@ public class Product {
     @Column(name = "serving_size_grams")
     private Integer servingSizeGrams;
 
-/**
- * Costo por unidad (por kg) del producto
- * Usado para calcular el costo total de recetas
- */
-@Column(name = "cost_per_unit")
-private Double costPerUnit;
+    /**
+     * Costo por unidad (por kg) del producto
+     * Usado para calcular el costo total de recetas
+     */
+    @Column(name = "cost_per_unit")
+    private BigDecimal costPerUnit;
 
     /**
      * Descripción opcional del tamaño de porción (ej: "1 taza", "1 rebanada")
@@ -164,32 +168,16 @@ private Double costPerUnit;
     /**
      * Timestamps de creación y actualización
      */
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     /**
      * Timestamps de creación y actualización
      */
+    @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
-
-    
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-        if (deleted == null) {
-            deleted = false;
-        }
-        if (labelingRegion == null) {
-            labelingRegion = LabelingRegion.EU;
-        }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 
     public void markAsDeleted() {
         this.deleted = true;

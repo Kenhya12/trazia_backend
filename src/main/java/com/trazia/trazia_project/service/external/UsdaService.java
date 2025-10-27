@@ -1,13 +1,14 @@
 package com.trazia.trazia_project.service.external;
 
-import com.trazia.trazia_project.dto.usda.UsdaSearchResponseDTO;
-import com.trazia.trazia_project.dto.usda.UsdaFoodDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import com.trazia.trazia_project.dto.external.usda.UsdaFoodDTO;
+import com.trazia.trazia_project.dto.external.usda.UsdaSearchResponseDTO;
 
 import java.net.URI;
 import java.util.List;

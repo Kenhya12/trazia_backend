@@ -3,8 +3,9 @@ package com.trazia.trazia_project.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.trazia.trazia_project.controller.rawmaterial.RawMaterialBatchController;
 import com.trazia.trazia_project.entity.RawMaterialBatch;
-import com.trazia.trazia_project.service.RawMaterialBatchService;
+import com.trazia.trazia_project.service.batch.RawMaterialBatchService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

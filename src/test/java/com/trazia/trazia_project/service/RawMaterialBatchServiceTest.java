@@ -5,7 +5,8 @@ import static org.mockito.Mockito.when;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.trazia.trazia_project.entity.RawMaterialBatch;
-import com.trazia.trazia_project.repository.RawMaterialBatchRepository;
+import com.trazia.trazia_project.repository.rawmaterial.RawMaterialBatchRepository;
+import com.trazia.trazia_project.service.batch.RawMaterialBatchService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
