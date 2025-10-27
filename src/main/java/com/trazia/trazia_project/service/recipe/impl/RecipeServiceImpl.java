@@ -133,6 +133,21 @@ public class RecipeServiceImpl implements RecipeService {
 
     /**
      * Calculates and stores in Recipe entity the nutrients per 100g.
+     *
+     * <p>
+     * <b>BigDecimal vs Double Usage:</b>
+     * <ul>
+     * <li>All weight and cost calculations are performed using {@code BigDecimal}
+     * to maintain precision, especially important for financial and nutritional
+     * data. BigDecimal avoids rounding errors and loss of precision common with
+     * floating-point arithmetic (Double).</li>
+     * <li>{@code Double} is used only when required for compatibility with external
+     * services (e.g., nutritionConversionService) or DTOs that require double
+     * values.</li>
+     * <li>Conversion from {@code BigDecimal} to {@code Double} is done as late as
+     * possible to preserve accuracy throughout calculations.</li>
+     * </ul>
+     * </p>
      */
     @Override
     public void calculatePerServing(Recipe recipe) {
@@ -144,11 +159,11 @@ public class RecipeServiceImpl implements RecipeService {
         }
 
         NutrimentsDTO total = calculateTotalNutrients(recipe);
-        // Use BigDecimal for yieldWeightGrams throughout, and only convert to double for service compatibility if needed
+        // BigDecimal used for all calculations, only convert to double here for service
+        // compatibility
         NutrimentsDTO per100g = nutritionConversionService.calculatePer100g(
                 total,
-                recipe.getYieldWeightGrams() != null ? recipe.getYieldWeightGrams().doubleValue() : 0.0
-        );
+                recipe.getYieldWeightGrams() != null ? recipe.getYieldWeightGrams() : BigDecimal.ZERO);
         // Validation to never assign null
         if (per100g == null) {
             per100g = NutrimentsDTO.builder()
@@ -170,6 +185,20 @@ public class RecipeServiceImpl implements RecipeService {
     /**
      * Returns % of Daily Value for received nutrients.
      * Ensures it never returns null, even if nutrients are null or incomplete.
+     *
+     * <p>
+     * <b>Null-check and Optional validation:</b>
+     * <ul>
+     * <li>Checks if the input {@code nutriments} object is null and returns an
+     * empty DTO if so.</li>
+     * <li>Each property of the {@code nutriments} object is validated using
+     * {@code Optional.ofNullable(...).orElse(0.0)}
+     * to ensure no field is left as null, preventing potential
+     * {@code NullPointerException} in downstream calculations.</li>
+     * <li>Wraps the conversion in a try-catch to handle any unexpected errors,
+     * always returning a non-null result.</li>
+     * </ul>
+     * </p>
      */
     @Override
     public NutrimentsDTO calculateDailyValue(NutrimentsDTO nutriments) {
@@ -206,6 +235,24 @@ public class RecipeServiceImpl implements RecipeService {
      * Returns a formatted string with ingredients, ordered by quantity descending
      * and includes allergens.
      * T 5.3.2
+     *
+     * <p>
+     * <b>Allergen Handling and Quantity Sorting:</b>
+     * <ul>
+     * <li>Ingredients are sorted in descending order by quantity (in grams) using
+     * BigDecimal
+     * to ensure the most abundant ingredients appear first, as required by labeling
+     * standards.</li>
+     * <li>For each ingredient, if the associated product has allergens (non-empty
+     * list), these are
+     * appended in parentheses after the ingredient name, e.g., "Flour - 100g
+     * (Allergens: gluten)".</li>
+     * <li>If no allergens are present, the ingredient is listed without the
+     * allergen note.</li>
+     * <li>Null checks are performed throughout to prevent NPEs for missing
+     * products, names, quantities, or allergens.</li>
+     * </ul>
+     * </p>
      */
     @Override
     public String formatIngredientsList(Recipe recipe) {
@@ -215,7 +262,7 @@ public class RecipeServiceImpl implements RecipeService {
 
         List<RecipeIngredient> ingredients = new ArrayList<>(recipe.getIngredients());
 
-        // Ordenar por cantidad descendente (peso)
+        // Sort ingredients by quantity descending (uses BigDecimal for accuracy)
         ingredients.sort(Comparator.comparing(
                 (RecipeIngredient i) -> i.getQuantityGrams() != null ? i.getQuantityGrams() : BigDecimal.ZERO)
                 .reversed());
@@ -229,7 +276,7 @@ public class RecipeServiceImpl implements RecipeService {
             BigDecimal quantity = ingredient.getQuantityGrams() != null ? ingredient.getQuantityGrams()
                     : BigDecimal.ZERO;
 
-            // Incluir alérgenos si existen
+            // Allergen handling: include list of allergens in parentheses if present
             String allergens = "";
             if (ingredient.getProduct() != null && ingredient.getProduct().getAllergens() != null
                     && !ingredient.getProduct().getAllergens().isEmpty()) {
@@ -419,7 +466,8 @@ public class RecipeServiceImpl implements RecipeService {
     private BigDecimal calculateYieldLossPercentage(BigDecimal totalIngredientsWeight, BigDecimal yieldWeightGrams) {
         if (totalIngredientsWeight == null || totalIngredientsWeight.compareTo(BigDecimal.ZERO) == 0)
             return BigDecimal.ZERO;
-        BigDecimal loss = totalIngredientsWeight.subtract(yieldWeightGrams != null ? yieldWeightGrams : BigDecimal.ZERO);
+        BigDecimal loss = totalIngredientsWeight
+                .subtract(yieldWeightGrams != null ? yieldWeightGrams : BigDecimal.ZERO);
         BigDecimal percentage = loss.divide(totalIngredientsWeight, 6, RoundingMode.HALF_UP)
                 .multiply(BigDecimal.valueOf(100))
                 .setScale(2, RoundingMode.HALF_UP);
@@ -439,7 +487,8 @@ public class RecipeServiceImpl implements RecipeService {
         return RecipeIngredientResponse.builder()
                 .id(ingredient.getId())
                 .product(productDTO)
-                .quantityGrams(ingredient.getQuantityGrams() != null ? ingredient.getQuantityGrams().doubleValue() : 0.0)
+                .quantityGrams(
+                        ingredient.getQuantityGrams() != null ? ingredient.getQuantityGrams().doubleValue() : 0.0)
                 .percentageOfTotal(percentageOfTotal.doubleValue())
                 .cost(ingredientCost.doubleValue())
                 .build();
@@ -519,47 +568,72 @@ public class RecipeServiceImpl implements RecipeService {
     }
 
     /**
-     * Helper to fill LabelPrintDTO with consistent BigDecimal usage and proper types.
-     * If includeAllergensAndLot is true, fills allergens, usage instructions, batch, expiry.
+     * Helper to fill LabelPrintDTO with consistent BigDecimal usage and proper
+     * types.
+     * If includeAllergensAndLot is true, fills allergens, usage instructions,
+     * batch, expiry.
+     *
+     * <p>
+     * <b>Required Setters in LabelPrintDTO:</b>
+     * <ul>
+     * <li>{@code setRecipeName} - Recipe name (required)</li>
+     * <li>{@code setRecipeDescription} - Recipe description (required)</li>
+     * <li>{@code setYieldWeightGrams} - Yield weight (required, never null)</li>
+     * <li>{@code setLegalDisclaimer} - Legal disclaimer (required)</li>
+     * <li>{@code setEnergyPer100g}, {@code setProteinPer100g}, ... - Nutritional
+     * info (required, always set even if zero)</li>
+     * <li>{@code setIngredientsList} - Formatted list of ingredients
+     * (required)</li>
+     * <li>{@code setAllergens} - List of allergens (required if
+     * includeAllergensAndLot is true)</li>
+     * <li>{@code setUsageInstructions} - Usage instructions (required if
+     * includeAllergensAndLot is true)</li>
+     * <li>{@code setBatchNumber} - Batch number (required if includeAllergensAndLot
+     * is true)</li>
+     * <li>{@code setExpiryDate} - Expiry date (required if includeAllergensAndLot
+     * is true)</li>
+     * </ul>
+     * </p>
      */
     private LabelPrintDTO buildLabelPrintDTO(Recipe recipe, boolean includeAllergensAndLot) {
         LabelPrintDTO label = new LabelPrintDTO();
-        // Basic information
-        label.setRecipeName(recipe.getName());
-        label.setRecipeDescription(recipe.getDescription());
-        // yieldWeightGrams as BigDecimal, never null
-        label.setYieldWeightGrams(recipe.getYieldWeightGrams() != null ? recipe.getYieldWeightGrams() : BigDecimal.ZERO);
-        // Legal disclaimer
+        // Set basic information (required in LabelPrintDTO)
+        label.setRecipeName(recipe.getName()); // required
+        label.setRecipeDescription(recipe.getDescription()); // required
+        // yieldWeightGrams as BigDecimal, never null (required)
+        label.setYieldWeightGrams(
+                recipe.getYieldWeightGrams() != null ? recipe.getYieldWeightGrams() : BigDecimal.ZERO);
+        // Legal disclaimer (required)
         label.setLegalDisclaimer("Best consumed before indicated date. Keep in cool, dry place.");
 
-        // Nutritional info
+        // Nutritional info (all fields required, never left unset)
         if (recipe.getNutrimentsPor100g() != null) {
             NutrimentsDTO nutriments = productMapper.toNutrimentsDTO(recipe.getNutrimentsPor100g());
-            label.setEnergyPer100g(toBigDecimal(nutriments.getCalories()));
-            label.setProteinPer100g(toBigDecimal(nutriments.getProtein()));
-            label.setFatPer100g(toBigDecimal(nutriments.getFat()));
-            label.setCarbsPer100g(toBigDecimal(nutriments.getCarbohydrates()));
-            label.setSugarsPer100g(toBigDecimal(nutriments.getSugars()));
-            label.setFiberPer100g(toBigDecimal(nutriments.getFiber()));
-            label.setSaturatedFatPer100g(toBigDecimal(nutriments.getSaturatedFat()));
-            label.setSaltPer100g(toBigDecimal(nutriments.getSalt()));
-            label.setSodiumPer100g(toBigDecimal(nutriments.getSodium()));
+            label.setEnergyPer100g(toBigDecimal(nutriments.getCalories())); // required
+            label.setProteinPer100g(toBigDecimal(nutriments.getProtein())); // required
+            label.setFatPer100g(toBigDecimal(nutriments.getFat())); // required
+            label.setCarbsPer100g(toBigDecimal(nutriments.getCarbohydrates())); // required
+            label.setSugarsPer100g(toBigDecimal(nutriments.getSugars())); // required
+            label.setFiberPer100g(toBigDecimal(nutriments.getFiber())); // required
+            label.setSaturatedFatPer100g(toBigDecimal(nutriments.getSaturatedFat())); // required
+            label.setSaltPer100g(toBigDecimal(nutriments.getSalt())); // required
+            label.setSodiumPer100g(toBigDecimal(nutriments.getSodium())); // required
         } else {
-            label.setEnergyPer100g(BigDecimal.ZERO);
-            label.setProteinPer100g(BigDecimal.ZERO);
-            label.setFatPer100g(BigDecimal.ZERO);
-            label.setCarbsPer100g(BigDecimal.ZERO);
-            label.setSugarsPer100g(BigDecimal.ZERO);
-            label.setFiberPer100g(BigDecimal.ZERO);
-            label.setSaturatedFatPer100g(BigDecimal.ZERO);
-            label.setSaltPer100g(BigDecimal.ZERO);
-            label.setSodiumPer100g(BigDecimal.ZERO);
+            label.setEnergyPer100g(BigDecimal.ZERO); // required
+            label.setProteinPer100g(BigDecimal.ZERO); // required
+            label.setFatPer100g(BigDecimal.ZERO); // required
+            label.setCarbsPer100g(BigDecimal.ZERO); // required
+            label.setSugarsPer100g(BigDecimal.ZERO); // required
+            label.setFiberPer100g(BigDecimal.ZERO); // required
+            label.setSaturatedFatPer100g(BigDecimal.ZERO); // required
+            label.setSaltPer100g(BigDecimal.ZERO); // required
+            label.setSodiumPer100g(BigDecimal.ZERO); // required
         }
-        // Formatted ingredient list (String)
+        // Formatted ingredient list (required)
         label.setIngredientsList(Arrays.asList(formatIngredientsList(recipe).split("\n")));
 
         if (includeAllergensAndLot) {
-            // Alérgenos: List<String>
+            // Allergens: List<String> (required if includeAllergensAndLot)
             List<String> allergens = recipe.getIngredients().stream()
                     .filter(ri -> ri.getProduct() != null && ri.getProduct().getAllergens() != null)
                     .flatMap(ri -> ri.getProduct().getAllergens().stream())
@@ -567,15 +641,16 @@ public class RecipeServiceImpl implements RecipeService {
                     .collect(Collectors.toList());
             label.setAllergens(allergens);
 
-            // Instrucciones de uso
+            // Usage instructions (required if includeAllergensAndLot)
             label.setUsageInstructions(recipe.getUsageInstructions() != null
                     ? recipe.getUsageInstructions()
                     : "");
 
-            // Lote y fecha de caducidad
-            label.setBatchNumber(recipe.getFinalProductLot() != null && recipe.getFinalProductLot().getBatchNumber() != null
-                    ? recipe.getFinalProductLot().getBatchNumber()
-                    : "");
+            // Batch number and expiry date (required if includeAllergensAndLot)
+            label.setBatchNumber(
+                    recipe.getFinalProductLot() != null && recipe.getFinalProductLot().getBatchNumber() != null
+                            ? recipe.getFinalProductLot().getBatchNumber()
+                            : "");
             label.setExpiryDate(recipe.getFinalProductLot() != null
                     ? recipe.getFinalProductLot().getExpiryDate()
                     : null);
@@ -583,6 +658,10 @@ public class RecipeServiceImpl implements RecipeService {
         return label;
     }
 
+    /**
+     * Converts a Double to BigDecimal, returning BigDecimal.ZERO if input is null.
+     * Used for safe conversion of nutritional values for DTOs and label printing.
+     */
     private BigDecimal toBigDecimal(Double value) {
         return value != null ? BigDecimal.valueOf(value) : BigDecimal.ZERO;
     }

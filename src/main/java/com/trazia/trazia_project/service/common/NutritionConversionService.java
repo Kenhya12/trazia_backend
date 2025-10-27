@@ -13,22 +13,22 @@ public class NutritionConversionService {
     /**
      * Calcula los nutrientes por 100g de receta.
      */
-    public NutrimentsDTO calculatePer100g(NutrimentsDTO totalNutrients, Double yieldWeightGrams) {
-        if (totalNutrients == null || yieldWeightGrams == null || yieldWeightGrams == 0) {
+    public NutrimentsDTO calculatePer100g(NutrimentsDTO totalNutrients, BigDecimal yieldWeightGrams) {
+        if (totalNutrients == null || yieldWeightGrams == null || yieldWeightGrams.compareTo(BigDecimal.ZERO) == 0) {
             return new NutrimentsDTO();
         }
 
-        BigDecimal factor = BigDecimal.valueOf(100).divide(BigDecimal.valueOf(yieldWeightGrams), 6, RoundingMode.HALF_UP);
+        BigDecimal factor = BigDecimal.valueOf(100).divide(yieldWeightGrams, 6, RoundingMode.HALF_UP);
 
         NutrimentsDTO per100g = new NutrimentsDTO();
-        per100g.setEnergyKcal(multiply(totalNutrients.getEnergyKcal(), factor).doubleValue());
-        per100g.setProtein(multiply(totalNutrients.getProtein(), factor).doubleValue());
-        per100g.setCarbohydrates(multiply(totalNutrients.getCarbohydrates(), factor).doubleValue());
-        per100g.setFat(multiply(totalNutrients.getFat(), factor).doubleValue());
-        per100g.setFiber(multiply(totalNutrients.getFiber(), factor).doubleValue());
-        per100g.setSugars(multiply(totalNutrients.getSugars(), factor).doubleValue());
-        per100g.setSodium(multiply(totalNutrients.getSodium(), factor).doubleValue());
-        per100g.setSaturatedFat(multiply(totalNutrients.getSaturatedFat(), factor).doubleValue());
+        per100g.setEnergyKcal(safeMultiply(totalNutrients.getEnergyKcal(), factor));
+        per100g.setProtein(safeMultiply(totalNutrients.getProtein(), factor));
+        per100g.setCarbohydrates(safeMultiply(totalNutrients.getCarbohydrates(), factor));
+        per100g.setFat(safeMultiply(totalNutrients.getFat(), factor));
+        per100g.setFiber(safeMultiply(totalNutrients.getFiber(), factor));
+        per100g.setSugars(safeMultiply(totalNutrients.getSugars(), factor));
+        per100g.setSodium(safeMultiply(totalNutrients.getSodium(), factor));
+        per100g.setSaturatedFat(safeMultiply(totalNutrients.getSaturatedFat(), factor));
 
         return per100g;
     }
@@ -36,25 +36,23 @@ public class NutritionConversionService {
     /**
      * Normaliza nutrientes según tamaño de porción y cantidad usada.
      */
-    public NutrimentsDTO normalizeNutrients(NutrimentsDTO nutrients, Double servingSize, Double quantityGrams) {
+    public NutrimentsDTO normalizeNutrients(NutrimentsDTO nutrients, BigDecimal servingSize, BigDecimal quantityGrams) {
         if (nutrients == null) return new NutrimentsDTO();
 
-        BigDecimal factor = BigDecimal.valueOf(quantityGrams);
-        if (servingSize != null && servingSize > 0) {
-            factor = factor.divide(BigDecimal.valueOf(servingSize), 6, RoundingMode.HALF_UP);
-        } else {
-            factor = factor.divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP);
-        }
+        BigDecimal divisor = (servingSize != null && servingSize.compareTo(BigDecimal.ZERO) > 0) 
+                ? servingSize 
+                : BigDecimal.valueOf(100);
+        BigDecimal factor = quantityGrams.divide(divisor, 6, RoundingMode.HALF_UP);
 
         NutrimentsDTO normalized = new NutrimentsDTO();
-        normalized.setEnergyKcal(multiply(nutrients.getEnergyKcal(), factor).doubleValue());
-        normalized.setProtein(multiply(nutrients.getProtein(), factor).doubleValue());
-        normalized.setCarbohydrates(multiply(nutrients.getCarbohydrates(), factor).doubleValue());
-        normalized.setFat(multiply(nutrients.getFat(), factor).doubleValue());
-        normalized.setFiber(multiply(nutrients.getFiber(), factor).doubleValue());
-        normalized.setSugars(multiply(nutrients.getSugars(), factor).doubleValue());
-        normalized.setSodium(multiply(nutrients.getSodium(), factor).doubleValue());
-        normalized.setSaturatedFat(multiply(nutrients.getSaturatedFat(), factor).doubleValue());
+        normalized.setEnergyKcal(safeMultiply(nutrients.getEnergyKcal(), factor));
+        normalized.setProtein(safeMultiply(nutrients.getProtein(), factor));
+        normalized.setCarbohydrates(safeMultiply(nutrients.getCarbohydrates(), factor));
+        normalized.setFat(safeMultiply(nutrients.getFat(), factor));
+        normalized.setFiber(safeMultiply(nutrients.getFiber(), factor));
+        normalized.setSugars(safeMultiply(nutrients.getSugars(), factor));
+        normalized.setSodium(safeMultiply(nutrients.getSodium(), factor));
+        normalized.setSaturatedFat(safeMultiply(nutrients.getSaturatedFat(), factor));
 
         return normalized;
     }
@@ -86,14 +84,14 @@ public class NutritionConversionService {
         if (nutriments == null) return new NutrimentsDTO();
 
         NutrimentsDTO dailyValue = new NutrimentsDTO();
-        dailyValue.setEnergyKcal(percentageOfTotal(nutriments.getEnergyKcal(), ReferenceDailyIntakes.CALORIES).doubleValue());
-        dailyValue.setProtein(percentageOfTotal(nutriments.getProtein(), ReferenceDailyIntakes.PROTEIN).doubleValue());
-        dailyValue.setCarbohydrates(percentageOfTotal(nutriments.getCarbohydrates(), ReferenceDailyIntakes.CARBOHYDRATES).doubleValue());
-        dailyValue.setSugars(percentageOfTotal(nutriments.getSugars(), ReferenceDailyIntakes.SUGARS).doubleValue());
-        dailyValue.setFat(percentageOfTotal(nutriments.getFat(), ReferenceDailyIntakes.FAT).doubleValue());
-        dailyValue.setSaturatedFat(percentageOfTotal(nutriments.getSaturatedFat(), ReferenceDailyIntakes.SATURATED_FAT).doubleValue());
-        dailyValue.setFiber(percentageOfTotal(nutriments.getFiber(), ReferenceDailyIntakes.FIBER).doubleValue());
-        dailyValue.setSodium(percentageOfTotal(nutriments.getSodium(), ReferenceDailyIntakes.SODIUM).doubleValue());
+        dailyValue.setEnergyKcal(percentageOfTotal(nutriments.getEnergyKcal(), ReferenceDailyIntakes.CALORIES));
+        dailyValue.setProtein(percentageOfTotal(nutriments.getProtein(), ReferenceDailyIntakes.PROTEIN));
+        dailyValue.setCarbohydrates(percentageOfTotal(nutriments.getCarbohydrates(), ReferenceDailyIntakes.CARBOHYDRATES));
+        dailyValue.setSugars(percentageOfTotal(nutriments.getSugars(), ReferenceDailyIntakes.SUGARS));
+        dailyValue.setFat(percentageOfTotal(nutriments.getFat(), ReferenceDailyIntakes.FAT));
+        dailyValue.setSaturatedFat(percentageOfTotal(nutriments.getSaturatedFat(), ReferenceDailyIntakes.SATURATED_FAT));
+        dailyValue.setFiber(percentageOfTotal(nutriments.getFiber(), ReferenceDailyIntakes.FIBER));
+        dailyValue.setSodium(percentageOfTotal(nutriments.getSodium(), ReferenceDailyIntakes.SODIUM));
 
         return dailyValue;
     }
@@ -105,14 +103,17 @@ public class NutritionConversionService {
         return (a != null ? a : 0.0) + (b != null ? b : 0.0);
     }
 
-    private BigDecimal multiply(Double value, BigDecimal factor) {
-        if (value == null) return BigDecimal.ZERO;
-        return BigDecimal.valueOf(value).multiply(factor).setScale(2, RoundingMode.HALF_UP);
+    private Double safeMultiply(Double value, BigDecimal factor) {
+        if (value == null) return 0.0;
+        return BigDecimal.valueOf(value).multiply(factor).setScale(2, RoundingMode.HALF_UP).doubleValue();
     }
 
-    private BigDecimal percentageOfTotal(Double value, Double reference) {
-        if (value == null || reference == null || reference == 0) return BigDecimal.ZERO;
-        return BigDecimal.valueOf(value).divide(BigDecimal.valueOf(reference), 4, RoundingMode.HALF_UP)
-                .multiply(BigDecimal.valueOf(100)).setScale(2, RoundingMode.HALF_UP);
+    private Double percentageOfTotal(Double value, Double reference) {
+        if (value == null || reference == null || reference == 0) return 0.0;
+        return BigDecimal.valueOf(value)
+                .divide(BigDecimal.valueOf(reference), 4, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                .setScale(2, RoundingMode.HALF_UP)
+                .doubleValue();
     }
 }

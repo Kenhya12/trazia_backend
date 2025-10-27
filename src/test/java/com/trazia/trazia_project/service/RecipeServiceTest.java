@@ -67,7 +67,7 @@ public class RecipeServiceTest {
                 Product product = Product.builder()
                                 .id(1L)
                                 .name("Pan integral")
-                                .costPerUnit(5.0)
+                                .costPerUnit(BigDecimal.valueOf(5.0))
                                 .nutriments(ProductMapperTestUtils.createSampleProductNutriments())
                                 .build();
 
@@ -109,7 +109,7 @@ public class RecipeServiceTest {
                 Recipe savedRecipe = Recipe.builder()
                                 .id(1L)
                                 .name(recipeRequest.getName())
-                                .yieldWeightGrams(recipeRequest.getYieldWeightGrams())
+                                .yieldWeightGrams(BigDecimal.valueOf(400.0))
                                 .ingredients(List.of(recipeIngredient))
                                 .build();
 
@@ -284,7 +284,7 @@ public class RecipeServiceTest {
                                 .id(1L)
                                 .name("Harina")
                                 .nutriments(harinaNutriments)
-                                .costPerUnit(2.0)
+                                .costPerUnit(BigDecimal.valueOf(2.0))
                                 .brand("Marca Harina")
                                 .description("Harina de trigo")
                                 .build();
@@ -292,7 +292,7 @@ public class RecipeServiceTest {
                                 .id(2L)
                                 .name("Azúcar")
                                 .nutriments(azucarNutriments)
-                                .costPerUnit(1.5)
+                                .costPerUnit(BigDecimal.valueOf(1.5))
                                 .brand("Marca Azúcar")
                                 .description("Azúcar blanca")
                                 .build();
@@ -384,7 +384,7 @@ public class RecipeServiceTest {
                 Recipe recipe = Recipe.builder()
                                 .id(1L)
                                 .name("Bizcocho básico")
-                                .yieldWeightGrams(500.0)
+                                .yieldWeightGrams(BigDecimal.valueOf(500.0))
                                 .ingredients(List.of(harinaIngredient, azucarIngredient))
                                 .nutrimentsPor100g(recipeProductNutriments)
                                 .build();
@@ -486,7 +486,7 @@ public class RecipeServiceTest {
         @Test
         void shouldCalculateCorrectValuesPerServing() {
                 Recipe recipe = sampleRecipe();
-                recipe.setYieldWeightGrams(250.0); // Reducir peso para recalcular
+                recipe.setYieldWeightGrams(BigDecimal.valueOf(500.0)); // Reducir peso para recalcular
                 NutrimentsDTO before = productMapper.toNutrimentsDTO(recipe.getNutrimentsPor100g());
                 assertNotNull(before);
                 recipeService.calculatePerServing(recipe);
@@ -530,7 +530,7 @@ public class RecipeServiceTest {
         @Test
         void shouldHandleZeroYieldWeightGracefully() {
                 Recipe recipe = sampleRecipe();
-                recipe.setYieldWeightGrams(0.0); // yieldWeight es 0
+                recipe.setYieldWeightGrams(BigDecimal.ZERO); // yieldWeight es 0
                 assertThrows(ArithmeticException.class, () -> recipeService.calculatePerServing(recipe));
         }
 

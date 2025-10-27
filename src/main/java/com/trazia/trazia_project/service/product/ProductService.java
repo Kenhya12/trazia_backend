@@ -37,33 +37,19 @@ public class ProductService {
     private final UserRepository userRepository;
     private final ProductMapper productMapper;
     private final MessageSource messageSource;
-    private final ImageStorageService imageStorageService; // ✅ SOLO UNA VEZ
+    private final ImageStorageService imageStorageService;
 
     // ==================== CRUD OPERATIONS ====================
 
     @Transactional
     public ProductResponse createProduct(ProductRequest request, Long userId) {
-        log.info("Creating product with name: {} for user ID: {}", request.getName(), userId);
+        log.info("Creating product '{}' for user ID: {}", request.getName(), userId);
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        getMessage("user.notFound", userId)));
-
-        boolean exists = productRepository.existsByUserIdAndName(userId, request.getName());
-        if (exists) {
-            throw new DuplicateProductException(
-                    getMessage("product.duplicate", request.getName()));
-        }
+        User user = getUserOrThrow(userId);
+        checkDuplicateProduct(userId, request.getName());
 
         Product product = productMapper.toEntity(request, user);
-
-        if (product.getNutriments() != null) {
-            product.getNutriments().setCalories(product.getNutriments().getCalories());
-            product.getNutriments().setProtein(product.getNutriments().getProtein());
-            product.getNutriments().setCarbohydrates(product.getNutriments().getCarbohydrates());
-            product.getNutriments().setFat(product.getNutriments().getFat());
-            product.getNutriments().setSaturatedFat(product.getNutriments().getSaturatedFat());
-        }
+        validateNutriments(product);
 
         Product saved = productRepository.save(product);
         log.info("Product created successfully with ID: {}", saved.getId());
@@ -72,39 +58,20 @@ public class ProductService {
     }
 
     public ProductResponse getProductById(Long productId) {
-        log.info("Fetching product by ID: {}", productId);
-
-        Product product = productRepository.findById(productId)
-                .filter(p -> !p.getDeleted())
-                .orElseThrow(() -> new ProductNotFoundException(
-                        getMessage("product.notFound", productId)));
-
+        Product product = getProductOrThrow(productId);
         return productMapper.toResponse(product);
     }
 
     @Transactional
     public ProductResponse updateProduct(Long productId, UpdateProductRequest request, Long userId) {
-        Product product = productRepository.findByIdAndUserId(productId, userId)
-                .orElseThrow(() -> new ProductNotFoundException(
-                        getMessage("product.notFound", productId)));
+        Product product = getProductOrThrow(productId, userId);
 
         if (request.getName() != null && !request.getName().equals(product.getName())) {
-            boolean exists = productRepository.existsByUserIdAndName(userId, request.getName());
-            if (exists) {
-                throw new DuplicateProductException(
-                        getMessage("product.duplicate", request.getName()));
-            }
+            checkDuplicateProduct(userId, request.getName());
         }
 
         productMapper.updateEntity(product, request);
-
-        if (product.getNutriments() != null) {
-            product.getNutriments().setCalories(product.getNutriments().getCalories());
-            product.getNutriments().setProtein(product.getNutriments().getProtein());
-            product.getNutriments().setCarbohydrates(product.getNutriments().getCarbohydrates());
-            product.getNutriments().setFat(product.getNutriments().getFat());
-            product.getNutriments().setSaturatedFat(product.getNutriments().getSaturatedFat());
-        }
+        validateNutriments(product);
 
         Product updated = productRepository.save(product);
         log.info("Product updated successfully: ID {}", productId);
@@ -114,72 +81,51 @@ public class ProductService {
 
     @Transactional
     public void softDeleteProduct(Long productId, Long userId) {
-        log.info("Soft deleting product ID: {} by user ID: {}", productId, userId);
-
-        Product product = productRepository.findByIdAndUserId(productId, userId)
-                .orElseThrow(() -> new ProductNotFoundException(
-                        getMessage("product.notFound", productId)));
-
+        Product product = getProductOrThrow(productId, userId);
         product.markAsDeleted();
         productRepository.save(product);
+        log.info("Soft deleted product ID: {} by user ID: {}", productId, userId);
     }
 
     @Transactional
     public void hardDeleteProduct(Long productId, Long userId) {
-        log.info("Hard deleting product ID: {} by user ID: {}", productId, userId);
-
-        Product product = productRepository.findByIdAndUserId(productId, userId)
-                .orElseThrow(() -> new ProductNotFoundException(
-                        getMessage("product.notFound", productId)));
-
+        Product product = getProductOrThrow(productId, userId);
         productRepository.delete(product);
+        log.info("Hard deleted product ID: {} by user ID: {}", productId, userId);
     }
 
     @Transactional
     public ProductResponse restoreProduct(Long productId, Long userId) {
-        Product product = productRepository.findByIdAndUserId(productId, userId)
-                .filter(Product::getDeleted)
-                .orElseThrow(() -> new ProductNotFoundException(
-                        getMessage("product.notFound", productId)));
+        Product product = getProductOrThrow(productId, userId);
+        if (!product.getDeleted())
+            return productMapper.toResponse(product);
 
         product.restore();
         Product restored = productRepository.save(product);
         log.info("Product restored successfully: ID {}", productId);
-
         return productMapper.toResponse(restored);
     }
 
     // ==================== QUERY OPERATIONS ====================
 
     public ProductPageResponse getUserProducts(Long userId, Pageable pageable) {
-        log.info("Fetching products for user ID: {}", userId);
         Page<Product> products = productRepository.findByUserIdAndDeletedFalse(userId, pageable);
         return productMapper.toPageResponse(products);
     }
 
     public ProductPageResponse searchProducts(String query, Long userId, Pageable pageable) {
-        log.info("Searching products with query: {} for user ID: {}", query, userId);
         Page<Product> products = productRepository.searchByNameOrBrand(query, userId, pageable);
         return productMapper.toPageResponse(products);
     }
 
     public ProductPageResponse getProductsByCategory(ProductCategory category, Long userId, Pageable pageable) {
-        log.info("Fetching products by category: {} for user ID: {}", category, userId);
-        Page<Product> products = productRepository.findByUserIdAndCategoryAndDeletedFalse(
-                userId, category, pageable);
+        Page<Product> products = productRepository.findByUserIdAndCategoryAndDeletedFalse(userId, category, pageable);
         return productMapper.toPageResponse(products);
     }
 
     public List<ProductResponse> listProducts() {
-        // Recupera todos los productos desde la base de datos o repositorio
-        List<Product> products = productRepository.findAll();
-
-        // Mapea a DTO
-        return products.stream()
-                .map(product -> ProductResponse.builder()
-                        .id(product.getId())
-                        .name(product.getName())
-                        .build())
+        return productRepository.findAll().stream()
+                .map(productMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
@@ -187,16 +133,12 @@ public class ProductService {
 
     @Transactional
     public ProductResponse uploadProductImage(Long productId, MultipartFile file, Long userId) throws IOException {
-        log.info("Uploading image for product ID: {} by user ID: {}", productId, userId);
-
-        Product product = productRepository.findByIdAndUserId(productId, userId)
-                .orElseThrow(() -> new ProductNotFoundException(
-                        getMessage("product.notFound", productId)));
+        Product product = getProductOrThrow(productId, userId);
 
         if (product.hasImage()) {
             try {
                 imageStorageService.deleteImage(product.getImagePath());
-                log.info("Old image deleted: {}", product.getImagePath());
+                log.info("Deleted old image: {}", product.getImagePath());
             } catch (IOException e) {
                 log.warn("Failed to delete old image: {}", e.getMessage());
             }
@@ -204,7 +146,6 @@ public class ProductService {
 
         String filename = imageStorageService.storeImage(file, productId);
         product.updateImage(filename);
-
         Product savedProduct = productRepository.save(product);
         log.info("Image uploaded successfully: {}", filename);
 
@@ -213,62 +154,64 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public byte[] getProductImage(Long productId) throws IOException {
-        log.debug("Fetching image for product ID: {}", productId);
-
-        Product product = productRepository.findById(productId)
-                .filter(p -> !p.getDeleted())
-                .orElseThrow(() -> new ProductNotFoundException(
-                        getMessage("product.notFound", productId)));
-
-        if (!product.hasImage()) {
+        Product product = getProductOrThrow(productId);
+        if (!product.hasImage())
             throw new IOException("Product has no image");
-        }
-
         return imageStorageService.loadImage(product.getImagePath());
     }
 
     @Transactional(readOnly = true)
     public byte[] getProductThumbnail(Long productId) throws IOException {
-        log.debug("Fetching thumbnail for product ID: {}", productId);
-
-        Product product = productRepository.findById(productId)
-                .filter(p -> !p.getDeleted())
-                .orElseThrow(() -> new ProductNotFoundException(
-                        getMessage("product.notFound", productId)));
-
-        if (!product.hasImage()) {
+        Product product = getProductOrThrow(productId);
+        if (!product.hasImage())
             throw new IOException("Product has no image");
-        }
-
         return imageStorageService.loadThumbnail(product.getImagePath());
     }
 
     @Transactional
     public void deleteProductImage(Long productId, Long userId) throws IOException {
-        log.info("Deleting image for product ID: {} by user ID: {}", productId, userId);
-
-        Product product = productRepository.findByIdAndUserId(productId, userId)
-                .orElseThrow(() -> new ProductNotFoundException(
-                        getMessage("product.notFound", productId)));
-
+        Product product = getProductOrThrow(productId, userId);
         if (product.hasImage()) {
             imageStorageService.deleteImage(product.getImagePath());
             product.removeImage();
             productRepository.save(product);
-            log.info("Image deleted successfully for product ID: {}", productId);
+            log.info("Deleted image for product ID: {}", productId);
         }
     }
 
-    // ==================== DELETE PRODUCT ====================
-    public void deleteProduct(Long productId, Long userId) {
-        Product product = productRepository.findByIdAndUserId(productId, userId)
-                .orElseThrow(() -> new ProductNotFoundException(
-                        messageSource.getMessage("product.notFound", null, Locale.getDefault())));
+    // ==================== HELPER METHODS ====================
 
-        productRepository.delete(product);
+    private User getUserOrThrow(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException(getMessage("user.notFound", userId)));
     }
 
-    // ==================== HELPER METHODS ====================
+    private Product getProductOrThrow(Long productId) {
+        return productRepository.findById(productId)
+                .filter(p -> !p.getDeleted())
+                .orElseThrow(() -> new ProductNotFoundException(getMessage("product.notFound", productId)));
+    }
+
+    private Product getProductOrThrow(Long productId, Long userId) {
+        return productRepository.findByIdAndUserId(productId, userId)
+                .orElseThrow(() -> new ProductNotFoundException(getMessage("product.notFound", productId)));
+    }
+
+    private void checkDuplicateProduct(Long userId, String name) {
+        if (productRepository.existsByUserIdAndName(userId, name)) {
+            throw new DuplicateProductException(getMessage("product.duplicate", name));
+        }
+    }
+
+    private void validateNutriments(Product product) {
+        if (product.getNutriments() == null)
+            return;
+        product.getNutriments().setCalories(product.getNutriments().getCalories());
+        product.getNutriments().setProtein(product.getNutriments().getProtein());
+        product.getNutriments().setCarbohydrates(product.getNutriments().getCarbohydrates());
+        product.getNutriments().setFat(product.getNutriments().getFat());
+        product.getNutriments().setSaturatedFat(product.getNutriments().getSaturatedFat());
+    }
 
     private String getMessage(String code, Object... args) {
         Locale locale = LocaleContextHolder.getLocale();
