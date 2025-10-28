@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 @Component
 public class ProductMapper {
 
-    // Convertir ENTIDAD ProductNutriments a NutrimentsDTO (para respuestas)
+    // Convertir ENTIDAD ProductNutriments a NutrimentsDTO
     public NutrimentsDTO toNutrimentsDTO(ProductNutriments entity) {
         if (entity == null) return null;
         NutrimentsDTO dto = new NutrimentsDTO();
@@ -29,10 +29,11 @@ public class ProductMapper {
         dto.setFiber(entity.getFiber() != null ? entity.getFiber().doubleValue() : null);
         dto.setSugars(entity.getSugars() != null ? entity.getSugars().doubleValue() : null);
         dto.setSodium(entity.getSodium() != null ? entity.getSodium().doubleValue() : null);
+        dto.setSalt(entity.getSalt() != null ? entity.getSalt().doubleValue() : null);
         return dto;
     }
 
-    // Método para convertir NutrimentsRequest a ENTIDAD ProductNutriments
+    // NutrimentsRequest -> ProductNutriments
     public ProductNutriments toEntityProductNutriments(NutrimentsRequest request) {
         if (request == null) return null;
         return ProductNutriments.builder()
@@ -48,11 +49,9 @@ public class ProductMapper {
                 .build();
     }
 
-    // Método para convertir NutrimentsDTO a ENTIDAD ProductNutriments
+    // NutrimentsDTO -> ProductNutriments
     public ProductNutriments toEntityProductNutriments(NutrimentsDTO dto) {
-        if (dto == null){
-            return null;
-        }
+        if (dto == null) return null;
         return ProductNutriments.builder()
                 .calories(dto.getEnergyKcal() != null ? BigDecimal.valueOf(dto.getEnergyKcal()) : null)
                 .protein(dto.getProtein() != null ? BigDecimal.valueOf(dto.getProtein()) : null)
@@ -62,8 +61,9 @@ public class ProductMapper {
                 .saturatedFat(dto.getSaturatedFat() != null ? BigDecimal.valueOf(dto.getSaturatedFat()) : null)
                 .fiber(dto.getFiber() != null ? BigDecimal.valueOf(dto.getFiber()) : null)
                 .sodium(dto.getSodium() != null ? BigDecimal.valueOf(dto.getSodium()) : null)
+                .salt(dto.getSalt() != null ? BigDecimal.valueOf(dto.getSalt()) : null)
                 .build();
-}
+    }
 
     public Product toEntity(ProductRequest dto, User user) {
         if (dto == null || user == null) return null;

@@ -71,7 +71,6 @@ class RecipeControllerTest {
                 .fat(new BigDecimal("0.0001"))
                 .carbohydrates(new BigDecimal("999.99"))
                 .proteins(null) // Valor null
-                .salt(BigDecimal.ZERO)
                 .vegan(true)
                 .vegetarian(true)
                 .glutenFree(true)
@@ -296,57 +295,58 @@ class RecipeControllerTest {
         }
     }
 
-@Test
-void testRecipeControllerCreateRecipe() {
-    System.out.println("=== 🧪 TEST CREATE RECIPE ===");
-    
-    RecipeService service = mock(RecipeService.class);
-    RecipeController controller = new RecipeController(service);
-    
-    RecipeRequest request = new RecipeRequest();
-    // Solo usar setName() que es el método más básico que debería existir
-    request.setName("Nueva Receta");
-    
-    RecipeResponse response = RecipeResponse.builder()
-            .id(1L)
-            .name("Nueva Receta")
-            .build();
-    
-    when(service.createRecipe(request, 1L)).thenReturn(response);
-    
-    ResponseEntity<RecipeResponse> result = controller.createRecipe(request, 1L);
-    
-    assertEquals(HttpStatus.OK, result.getStatusCode());
-    assertNotNull(result.getBody());
-    assertEquals("Nueva Receta", result.getBody().getName());
-    assertEquals(1L, result.getBody().getId());
-    
-    System.out.println("✅ CREATE RECIPE PROBADO");
-}
+    @Test
+    void testRecipeControllerCreateRecipe() {
+        System.out.println("=== 🧪 TEST CREATE RECIPE ===");
 
-@Test
-void testRecipeControllerGetRecipeById() {
-    System.out.println("=== 🧪 TEST GET RECIPE BY ID ===");
-    
-    RecipeService service = mock(RecipeService.class);
-    RecipeController controller = new RecipeController(service);
-    
-    // Solo probar el caso exitoso (el controller no maneja excepciones en este método)
-    RecipeResponse response = RecipeResponse.builder()
-            .id(1L)
-            .name("Receta por ID")
-            .build();
-    
-    when(service.getRecipeById(1L, 1L)).thenReturn(response);
-    
-    ResponseEntity<RecipeResponse> successResult = controller.getRecipeById(1L, 1L);
-    
-    assertEquals(HttpStatus.OK, successResult.getStatusCode());
-    assertNotNull(successResult.getBody());
-    assertEquals("Receta por ID", successResult.getBody().getName());
-    
-    System.out.println("✅ GET RECIPE BY ID PROBADO - SOLO CASO EXITOSO");
-}   
+        RecipeService service = mock(RecipeService.class);
+        RecipeController controller = new RecipeController(service);
+
+        RecipeRequest request = new RecipeRequest();
+        // Solo usar setName() que es el método más básico que debería existir
+        request.setName("Nueva Receta");
+
+        RecipeResponse response = RecipeResponse.builder()
+                .id(1L)
+                .name("Nueva Receta")
+                .build();
+
+        when(service.createRecipe(request, 1L)).thenReturn(response);
+
+        ResponseEntity<RecipeResponse> result = controller.createRecipe(request, 1L);
+
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertNotNull(result.getBody());
+        assertEquals("Nueva Receta", result.getBody().getName());
+        assertEquals(1L, result.getBody().getId());
+
+        System.out.println("✅ CREATE RECIPE PROBADO");
+    }
+
+    @Test
+    void testRecipeControllerGetRecipeById() {
+        System.out.println("=== 🧪 TEST GET RECIPE BY ID ===");
+
+        RecipeService service = mock(RecipeService.class);
+        RecipeController controller = new RecipeController(service);
+
+        // Solo probar el caso exitoso (el controller no maneja excepciones en este
+        // método)
+        RecipeResponse response = RecipeResponse.builder()
+                .id(1L)
+                .name("Receta por ID")
+                .build();
+
+        when(service.getRecipeById(1L, 1L)).thenReturn(response);
+
+        ResponseEntity<RecipeResponse> successResult = controller.getRecipeById(1L, 1L);
+
+        assertEquals(HttpStatus.OK, successResult.getStatusCode());
+        assertNotNull(successResult.getBody());
+        assertEquals("Receta por ID", successResult.getBody().getName());
+
+        System.out.println("✅ GET RECIPE BY ID PROBADO - SOLO CASO EXITOSO");
+    }
 
     @Test
     void testRecipeControllerUpdateRecipe() {

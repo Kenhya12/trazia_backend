@@ -22,4 +22,6 @@ public class ProductNutriments {
     private Double protein;
     private Double salt;
     private Double sodium;
+
+    
 }

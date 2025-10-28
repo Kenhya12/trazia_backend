@@ -58,6 +58,10 @@ public class LabelPrintDTO {
     private BigDecimal dvProteins;
     private BigDecimal dvSalt;
     private BigDecimal yieldWeightGrams;
+    private BigDecimal fat;
+    private BigDecimal carbohydrates;
+    private BigDecimal proteins;
+
 
     // Etiquetas de dieta / estilo de vida
     private boolean vegan;

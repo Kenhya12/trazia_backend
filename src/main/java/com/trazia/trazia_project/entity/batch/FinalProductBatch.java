@@ -36,6 +36,9 @@ public class FinalProductBatch {
         joinColumns = @JoinColumn(name = "final_product_batch_id"),
         inverseJoinColumns = @JoinColumn(name = "raw_material_batch_id")
     )
-    
     private List<RawMaterialBatch> rawMaterialBatchesUsed;
+
+    /** Relación 1:N con los lotes finales asociados a este batch */
+    @OneToMany(mappedBy = "finalProductBatch", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<FinalProductLot> finalProductLots;
 }

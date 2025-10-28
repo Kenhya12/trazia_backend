@@ -134,5 +134,4 @@ public class ProductController {
                 productService.hardDeleteProduct(id, user.getId());
                 return ResponseEntity.noContent().build();
         }
-
 }

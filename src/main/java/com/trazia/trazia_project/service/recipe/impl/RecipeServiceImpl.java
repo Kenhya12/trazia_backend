@@ -2,6 +2,7 @@ package com.trazia.trazia_project.service.recipe.impl;
 
 import com.trazia.trazia_project.dto.product.ProductDTO;
 import com.trazia.trazia_project.dto.recipe.*;
+import com.trazia.trazia_project.entity.batch.FinalProductLot;
 import com.trazia.trazia_project.entity.product.Product;
 import com.trazia.trazia_project.entity.recipe.Recipe;
 import com.trazia.trazia_project.entity.recipe.RecipeIngredient;
@@ -597,43 +598,43 @@ public class RecipeServiceImpl implements RecipeService {
      */
     private LabelPrintDTO buildLabelPrintDTO(Recipe recipe, boolean includeAllergensAndLot) {
         LabelPrintDTO label = new LabelPrintDTO();
-        // Set basic information (required in LabelPrintDTO)
-        label.setRecipeName(recipe.getName()); // required
-        label.setRecipeDescription(recipe.getDescription()); // required
-        // yieldWeightGrams as BigDecimal, never null (required)
+
+        // Información básica
+        label.setRecipeName(recipe.getName());
+        label.setRecipeDescription(recipe.getDescription());
         label.setYieldWeightGrams(
                 recipe.getYieldWeightGrams() != null ? recipe.getYieldWeightGrams() : BigDecimal.ZERO);
-        // Legal disclaimer (required)
         label.setLegalDisclaimer("Best consumed before indicated date. Keep in cool, dry place.");
 
-        // Nutritional info (all fields required, never left unset)
+        // Información nutricional
         if (recipe.getNutrimentsPor100g() != null) {
             NutrimentsDTO nutriments = productMapper.toNutrimentsDTO(recipe.getNutrimentsPor100g());
-            label.setEnergyPer100g(toBigDecimal(nutriments.getCalories())); // required
-            label.setProteinPer100g(toBigDecimal(nutriments.getProtein())); // required
-            label.setFatPer100g(toBigDecimal(nutriments.getFat())); // required
-            label.setCarbsPer100g(toBigDecimal(nutriments.getCarbohydrates())); // required
-            label.setSugarsPer100g(toBigDecimal(nutriments.getSugars())); // required
-            label.setFiberPer100g(toBigDecimal(nutriments.getFiber())); // required
-            label.setSaturatedFatPer100g(toBigDecimal(nutriments.getSaturatedFat())); // required
-            label.setSaltPer100g(toBigDecimal(nutriments.getSalt())); // required
-            label.setSodiumPer100g(toBigDecimal(nutriments.getSodium())); // required
+            label.setEnergyPer100g(toBigDecimal(nutriments.getCalories()));
+            label.setProteinPer100g(toBigDecimal(nutriments.getProtein()));
+            label.setFatPer100g(toBigDecimal(nutriments.getFat()));
+            label.setCarbsPer100g(toBigDecimal(nutriments.getCarbohydrates()));
+            label.setSugarsPer100g(toBigDecimal(nutriments.getSugars()));
+            label.setFiberPer100g(toBigDecimal(nutriments.getFiber()));
+            label.setSaturatedFatPer100g(toBigDecimal(nutriments.getSaturatedFat()));
+            label.setSaltPer100g(toBigDecimal(nutriments.getSalt()));
+            label.setSodiumPer100g(toBigDecimal(nutriments.getSodium()));
         } else {
-            label.setEnergyPer100g(BigDecimal.ZERO); // required
-            label.setProteinPer100g(BigDecimal.ZERO); // required
-            label.setFatPer100g(BigDecimal.ZERO); // required
-            label.setCarbsPer100g(BigDecimal.ZERO); // required
-            label.setSugarsPer100g(BigDecimal.ZERO); // required
-            label.setFiberPer100g(BigDecimal.ZERO); // required
-            label.setSaturatedFatPer100g(BigDecimal.ZERO); // required
-            label.setSaltPer100g(BigDecimal.ZERO); // required
-            label.setSodiumPer100g(BigDecimal.ZERO); // required
+            label.setEnergyPer100g(BigDecimal.ZERO);
+            label.setProteinPer100g(BigDecimal.ZERO);
+            label.setFatPer100g(BigDecimal.ZERO);
+            label.setCarbsPer100g(BigDecimal.ZERO);
+            label.setSugarsPer100g(BigDecimal.ZERO);
+            label.setFiberPer100g(BigDecimal.ZERO);
+            label.setSaturatedFatPer100g(BigDecimal.ZERO);
+            label.setSaltPer100g(BigDecimal.ZERO);
+            label.setSodiumPer100g(BigDecimal.ZERO);
         }
-        // Formatted ingredient list (required)
+
+        // Ingredientes
         label.setIngredientsList(Arrays.asList(formatIngredientsList(recipe).split("\n")));
 
         if (includeAllergensAndLot) {
-            // Allergens: List<String> (required if includeAllergensAndLot)
+            // Alérgenos
             List<String> allergens = recipe.getIngredients().stream()
                     .filter(ri -> ri.getProduct() != null && ri.getProduct().getAllergens() != null)
                     .flatMap(ri -> ri.getProduct().getAllergens().stream())
@@ -641,27 +642,24 @@ public class RecipeServiceImpl implements RecipeService {
                     .collect(Collectors.toList());
             label.setAllergens(allergens);
 
-            // Usage instructions (required if includeAllergensAndLot)
-            label.setUsageInstructions(recipe.getUsageInstructions() != null
-                    ? recipe.getUsageInstructions()
-                    : "");
+            // Uso
+            label.setUsageInstructions(recipe.getUsageInstructionsSafe());
 
-            // Batch number and expiry date (required if includeAllergensAndLot)
-            label.setBatchNumber(
-                    recipe.getFinalProductLot() != null && recipe.getFinalProductLot().getBatchNumber() != null
-                            ? recipe.getFinalProductLot().getBatchNumber()
-                            : "");
-            label.setExpiryDate(recipe.getFinalProductLot() != null
-                    ? recipe.getFinalProductLot().getExpiryDate()
-                    : null);
+            // Lote final
+            List<FinalProductLot> lots = recipe.getFinalProductLotsSafe();
+            if (!lots.isEmpty()) {
+                FinalProductLot lot = lots.get(0);
+                label.setBatchNumber(lot.getBatchNumber() != null ? lot.getBatchNumber() : "");
+                label.setExpiryDate(lot.getExpiryDate());
+            } else {
+                label.setBatchNumber("");
+                label.setExpiryDate(null);
+            }
         }
+
         return label;
     }
 
-    /**
-     * Converts a Double to BigDecimal, returning BigDecimal.ZERO if input is null.
-     * Used for safe conversion of nutritional values for DTOs and label printing.
-     */
     private BigDecimal toBigDecimal(Double value) {
         return value != null ? BigDecimal.valueOf(value) : BigDecimal.ZERO;
     }

@@ -1,10 +1,11 @@
-package com.trazia.trazia_project.controller;
+package com.trazia.trazia_project.product;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -12,11 +13,13 @@ import static org.mockito.Mockito.*;
 import org.springframework.http.MediaType;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import org.springframework.data.domain.Pageable;
 
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trazia.trazia_project.controller.product.ProductController;
+import com.trazia.trazia_project.dto.product.ProductPageResponse;
 import com.trazia.trazia_project.dto.product.ProductRequest;
 import com.trazia.trazia_project.dto.product.UpdateProductRequest;
 import com.trazia.trazia_project.dto.product.ProductResponse;
@@ -42,6 +45,18 @@ public class ProductControllerTest {
         @BeforeEach
         void setup() {
                 mockMvc = MockMvcBuilders.standaloneSetup(productController).build();
+
+                // Desactivar stubbing estricto para evitar problemas de argument matching
+                Mockito.lenient().when(productService.getUserProducts(any(Long.class), any(Pageable.class)))
+                                .thenReturn(new ProductPageResponse());
+                Mockito.lenient()
+                                .when(productService.searchProducts(any(String.class), any(Long.class),
+                                                any(Pageable.class)))
+                                .thenReturn(new ProductPageResponse());
+                Mockito.lenient()
+                                .when(productService.getProductsByCategory(any(ProductCategory.class), any(Long.class),
+                                                any(Pageable.class)))
+                                .thenReturn(new ProductPageResponse());
         }
 
         @Test
@@ -157,4 +172,37 @@ public class ProductControllerTest {
                                 .andExpect(jsonPath("$.name").value("Prod 1"));
         }
 
+        @Test
+        public void testRestoreProduct() throws Exception {
+                ProductResponse response = ProductResponse.builder()
+                                .id(1L)
+                                .name("Producto Restaurado")
+                                .build();
+
+                when(productService.restoreProduct(anyLong(), anyLong())).thenReturn(response);
+
+                mockMvc.perform(patch("/api/products/1/restore")
+                                .param("userId", "1"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.name").value("Producto Restaurado"));
+        }
+
+        @Test
+        public void testHardDeleteProduct() throws Exception {
+                doNothing().when(productService).hardDeleteProduct(anyLong(), anyLong());
+
+                mockMvc.perform(delete("/api/products/1/hard")
+                                .param("userId", "1"))
+                                .andExpect(status().isNoContent());
+
+                verify(productService, times(1)).hardDeleteProduct(1L, 1L);
+        }
+
+        @Test
+        public void testGetProductByIdNotFound() throws Exception {
+                when(productService.getProductById(999L)).thenReturn(null);
+
+                mockMvc.perform(get("/api/products/999"))
+                                .andExpect(status().isNotFound());
+        }
 }
