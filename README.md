@@ -80,30 +80,6 @@ TraziaProject is a RESTful API designed for the food industry. Its core function
 2.  **Core Calculation:** Weighted sum of nutrients and costs based on the recipe.
 3.  **Legal Output:** Generation of a *dataset* (`LabelPrintDTO`) with values per $100 \text{g}$, per serving, and %DV.
 
----
-
-## 🧪 Pruebas y Documentación de la API
-
-### 🔗 Swagger UI
-Puedes explorar y probar la API desde la interfaz de Swagger:
-
-👉 **Swagger UI:**  
-[http://localhost:9090/swagger-ui/index.html](http://localhost:9090/swagger-ui/index.html)
-
----
-
-### 📬 Colección de Postman
-Para realizar pruebas de endpoints, puedes importar la colección de Postman disponible en el proyecto:
-
-👉 **Colección Postman:**  
-[https://www.postman.com/collections/TU_ID_O_ENLACE](https://www.postman.com/collections/TU_ID_O_ENLACE)
-
-_(Sustituye el enlace anterior por el link real a tu colección publicada o al JSON que hayas exportado del proyecto Postman.)_
-
----
-
-### ⚙️ Configuración del Servidor Local
-La aplicación backend corre por defecto en:
 
 ---
 
