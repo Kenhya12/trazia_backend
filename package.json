@@ -1,0 +1,13 @@
+{
+    "name": "trazia-backend-proxy",
+    "version": "1.0.0",
+    "description": "Proxy server for Gemini API calls",
+    "main": "server.mjs",
+    "type": "module",
+    "scripts": {
+        "start": "node server.mjs"
+    },
+    "dependencies": {
+        "@google/genai": "^1.27.0"
+    }
+}

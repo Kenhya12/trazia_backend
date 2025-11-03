@@ -31,6 +31,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
+
+        log.info("🔍 JWT Filter ejecutado en ruta: {}", request.getServletPath());
+
+        String path = request.getServletPath();
+        if (path.startsWith("/api/auth/") || path.startsWith("/h2-console/")) {
+            log.info("⏭️  Saltando JWT Filter para ruta pública: {}", path);
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         final String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {

@@ -1,5 +1,7 @@
 package com.trazia.trazia_project.service.recipe.impl;
 
+import org.springframework.lang.NonNull;
+
 import com.trazia.trazia_project.dto.product.ProductDTO;
 import com.trazia.trazia_project.dto.recipe.*;
 import com.trazia.trazia_project.entity.batch.FinalProductLot;
@@ -26,6 +28,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -53,8 +56,9 @@ public class RecipeServiceImpl implements RecipeService {
     @Override
     @Transactional
     public RecipeResponse createRecipe(RecipeRequest request, Long userId) {
+        Objects.requireNonNull(userId, "User ID cannot be null");
         log.info("Creating recipe '{}' for user {}", request.getName(), userId);
-        Recipe recipe = buildRecipeEntity(request, userId);
+        Recipe recipe = Objects.requireNonNull(buildRecipeEntity(request, userId), "Recipe cannot be null");
         recipe = recipeRepository.save(recipe);
         List<RecipeIngredient> ingredients = createIngredientsFromRequest(recipe, request.getIngredients());
         recipe.setIngredients(ingredients);
@@ -125,9 +129,11 @@ public class RecipeServiceImpl implements RecipeService {
     @Override
     @Transactional
     public void deleteRecipe(Long recipeId, Long userId) {
-        Recipe recipe = recipeRepository.findByIdAndUserId(recipeId, userId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Recipe not found with id: " + recipeId));
+        Recipe recipe = Objects.requireNonNull(
+                recipeRepository.findByIdAndUserId(recipeId, userId)
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                "Recipe not found with id: " + recipeId)),
+                "Recipe cannot be null");
         log.info("Deleting recipe {} for user {}", recipeId, userId);
         recipeRepository.delete(recipe);
     }
@@ -345,7 +351,7 @@ public class RecipeServiceImpl implements RecipeService {
     // PRIVATE HELPERS
     // ===========================
 
-    private Recipe buildRecipeEntity(RecipeRequest request, Long userId) {
+    private Recipe buildRecipeEntity(@NonNull RecipeRequest request, @NonNull Long userId) {
         return Recipe.builder()
                 .name(request.getName())
                 .description(request.getDescription())
@@ -358,26 +364,30 @@ public class RecipeServiceImpl implements RecipeService {
                 .build();
     }
 
-    private List<RecipeIngredient> createIngredientsFromRequest(Recipe recipe, List<RecipeIngredientRequest> reqs) {
+    private List<RecipeIngredient> createIngredientsFromRequest(@NonNull Recipe recipe, List<RecipeIngredientRequest> reqs) {
         if (reqs == null || reqs.isEmpty())
             return List.of();
 
         List<RecipeIngredient> list = new ArrayList<>();
         for (int i = 0; i < reqs.size(); i++) {
             RecipeIngredientRequest r = reqs.get(i);
-            Product product = productRepository.findById(r.getProductId())
+            Long productId = Objects.requireNonNull(r.getProductId(), "Product ID cannot be null");
+            Product product = productRepository.findById(productId)
                     .orElseThrow(() -> new ResourceNotFoundException(
-                            "Product not found with id: " + r.getProductId()));
+                            "Product not found with id: " + productId));
 
             Integer displayOrder = r.getDisplayOrder() != null ? r.getDisplayOrder() : i;
             RecipeIngredient ingredient = RecipeIngredient.builder()
-                    .recipe(recipe)
-                    .product(product)
-                    .quantityGrams(r.getQuantityGrams() == null ? BigDecimal.ZERO : r.getQuantityGrams())
+                    .recipe(Objects.requireNonNull(recipe, "Recipe cannot be null"))
+                    .product(Objects.requireNonNull(product, "Product cannot be null"))
+                    .quantityGrams(r.getQuantityGrams() != null ? r.getQuantityGrams() : BigDecimal.ZERO)
                     .displayOrder(displayOrder)
                     .build();
 
-            RecipeIngredient saved = recipeIngredientRepository.save(ingredient);
+            // Guardar y asegurar que no sea nulo
+            RecipeIngredient saved = Objects.requireNonNull(
+                    recipeIngredientRepository.save(ingredient),
+                    "Saved RecipeIngredient cannot be null");
             list.add(saved);
         }
         return list;

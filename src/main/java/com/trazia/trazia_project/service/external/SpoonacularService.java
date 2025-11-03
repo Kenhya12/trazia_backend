@@ -1,8 +1,6 @@
 package com.trazia.trazia_project.service.external;
 
 import com.trazia.trazia_project.dto.recipe.*;
-import org.springframework.http.MediaType;
-import reactor.core.publisher.Mono;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,8 +28,7 @@ public class SpoonacularService {
 
             SpoonacularResponse response = webClient.post()
                     .uri(uriBuilder -> uriBuilder.queryParam("apiKey", apiKey).build())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(Mono.just(request), SpoonacularRequest.class)
+                    .bodyValue(request)
                     .retrieve()
                     .bodyToMono(SpoonacularResponse.class)
                     .block();

@@ -13,8 +13,12 @@ import com.trazia.trazia_project.exception.auth.UserAlreadyExistsException;
 import com.trazia.trazia_project.repository.user.UserRepository;
 import com.trazia.trazia_project.security.JwtTokenProvider;
 
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.ArrayList;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -51,26 +55,35 @@ public class AuthService {
                 .build();
 
         User savedUser = userRepository.save(user);
+
         log.info("User registered successfully with email: {}", savedUser.getEmail());
 
-        return buildAuthResponse(savedUser);
+        org.springframework.security.core.userdetails.UserDetails userDetails = org.springframework.security.core.userdetails.User
+                .withUsername(savedUser.getEmail())
+                .password(savedUser.getPassword())
+                .authorities(new ArrayList<>())
+                .build();
+
+        return buildAuthResponse(userDetails, savedUser);
     }
 
     public AuthResponse login(LoginRequest request) {
         log.info("Login attempt for email: {}", request.getEmail());
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new InvalidCredentialsException("Invalid email or password"));
+        User user = Objects.requireNonNull(userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new InvalidCredentialsException("Invalid email or password")));
 
         try {
-            authenticationManager.authenticate(
+            var authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getEmail(),
                             request.getPassword()));
+            org.springframework.security.core.userdetails.UserDetails userDetails = (org.springframework.security.core.userdetails.UserDetails) authentication
+                    .getPrincipal();
 
             log.info("User authenticated successfully: {}", user.getEmail());
 
-            return buildAuthResponse(user);
+            return buildAuthResponse(userDetails, user);
 
         } catch (Exception e) {
             log.error("Authentication failed for email: {}", request.getEmail());
@@ -78,8 +91,9 @@ public class AuthService {
         }
     }
 
-    private AuthResponse buildAuthResponse(User user) {
-        String token = jwtTokenProvider.generateToken(user);
+    private AuthResponse buildAuthResponse(
+            @NonNull org.springframework.security.core.userdetails.UserDetails userDetails, @NonNull User user) {
+        String token = jwtTokenProvider.generateToken(userDetails);
         return AuthResponse.builder()
                 .token(token)
                 .username(user.getUsername())

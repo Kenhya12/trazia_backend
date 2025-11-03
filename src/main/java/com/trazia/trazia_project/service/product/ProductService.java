@@ -1,4 +1,5 @@
 package com.trazia.trazia_project.service.product;
+import java.util.Objects;
 
 import com.trazia.trazia_project.dto.product.*;
 import com.trazia.trazia_project.entity.product.Product;
@@ -12,6 +13,7 @@ import com.trazia.trazia_project.repository.product.ProductRepository;
 import com.trazia.trazia_project.repository.user.UserRepository;
 import com.trazia.trazia_project.service.common.ImageStorageService;
 
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
@@ -51,10 +53,15 @@ public class ProductService {
         Product product = productMapper.toEntity(request, user);
         validateNutriments(product);
 
-        Product saved = productRepository.save(product);
+        // Guardar el producto asegurando que nunca sea nulo
+        Product saved = saveNonNullProduct(product);
         log.info("Product created successfully with ID: {}", saved.getId());
 
         return productMapper.toResponse(saved);
+    }
+
+    private Product saveNonNullProduct(Product product) {
+        return Objects.requireNonNull(productRepository.save(product), "Saved product cannot be null");
     }
 
     public ProductResponse getProductById(Long productId) {
@@ -64,7 +71,7 @@ public class ProductService {
 
     @Transactional
     public ProductResponse updateProduct(Long productId, UpdateProductRequest request, Long userId) {
-        Product product = getProductOrThrow(productId, userId);
+        Product product = Objects.requireNonNull(getProductOrThrow(productId, userId), "Product cannot be null");
 
         if (request.getName() != null && !request.getName().equals(product.getName())) {
             checkDuplicateProduct(userId, request.getName());
@@ -73,7 +80,7 @@ public class ProductService {
         productMapper.updateEntity(product, request);
         validateNutriments(product);
 
-        Product updated = productRepository.save(product);
+        Product updated = Objects.requireNonNull(productRepository.save(product), "Updated product cannot be null");
         log.info("Product updated successfully: ID {}", productId);
 
         return productMapper.toResponse(updated);
@@ -88,8 +95,8 @@ public class ProductService {
     }
 
     @Transactional
-    public void hardDeleteProduct(Long productId, Long userId) {
-        Product product = getProductOrThrow(productId, userId);
+    public void hardDeleteProduct(@NonNull Long productId, @NonNull Long userId) {
+        Product product = Objects.requireNonNull(getProductOrThrow(productId, userId), "Product cannot be null");
         productRepository.delete(product);
         log.info("Hard deleted product ID: {} by user ID: {}", productId, userId);
     }
@@ -181,18 +188,18 @@ public class ProductService {
 
     // ==================== HELPER METHODS ====================
 
-    private User getUserOrThrow(Long userId) {
+    private User getUserOrThrow(@NonNull Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException(getMessage("user.notFound", userId)));
     }
 
-    private Product getProductOrThrow(Long productId) {
+    private Product getProductOrThrow(@NonNull Long productId) {
         return productRepository.findById(productId)
                 .filter(p -> !p.getDeleted())
                 .orElseThrow(() -> new ProductNotFoundException(getMessage("product.notFound", productId)));
     }
 
-    private Product getProductOrThrow(Long productId, Long userId) {
+    private Product getProductOrThrow(@NonNull Long productId, @NonNull Long userId) {
         return productRepository.findByIdAndUserId(productId, userId)
                 .orElseThrow(() -> new ProductNotFoundException(getMessage("product.notFound", productId)));
     }
@@ -213,7 +220,7 @@ public class ProductService {
         product.getNutriments().setSaturatedFat(product.getNutriments().getSaturatedFat());
     }
 
-    private String getMessage(String code, Object... args) {
+    private String getMessage(@NonNull String code, Object... args) {
         Locale locale = LocaleContextHolder.getLocale();
         return messageSource.getMessage(code, args, locale);
     }

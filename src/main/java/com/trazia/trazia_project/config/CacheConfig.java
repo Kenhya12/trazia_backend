@@ -18,15 +18,17 @@ public class CacheConfig {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager(
                 "openFoodFactsProducts",  // ✅ Cache para OpenFoodFacts
                 "usdaSearchCache",        // ✅ Cache para búsquedas USDA
-                "usdaFoods"              // ✅ Cache para alimentos USDA individuales
+                "usdaFoods"               // ✅ Cache para alimentos USDA individuales
         );
-        
-        cacheManager.setCaffeine(Caffeine.newBuilder()
+
+        // ✅ Tipado explícito para evitar warnings
+        @SuppressWarnings("null")
+        Caffeine<Object, Object> caffeineBuilder = Caffeine.newBuilder()
                 .expireAfterWrite(1, TimeUnit.HOURS)
                 .maximumSize(1000)
-                .recordStats());
-        
+                .recordStats();
+
+        cacheManager.setCaffeine(caffeineBuilder);
         return cacheManager;
     }
 }
-

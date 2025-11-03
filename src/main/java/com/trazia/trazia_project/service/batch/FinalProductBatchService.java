@@ -5,6 +5,7 @@ import com.trazia.trazia_project.entity.batch.RawMaterialBatch;
 import com.trazia.trazia_project.repository.product.FinalProductBatchRepository;
 import com.trazia.trazia_project.repository.rawmaterial.RawMaterialBatchRepository;
 
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -49,7 +50,7 @@ public class FinalProductBatchService {
         return savedBatch;
     }
 
-    public Optional<FinalProductBatch> findById(Long id) {
+    public Optional<FinalProductBatch> findById(@NonNull Long id) {
         return finalProductBatchRepository.findById(id);
     }
 

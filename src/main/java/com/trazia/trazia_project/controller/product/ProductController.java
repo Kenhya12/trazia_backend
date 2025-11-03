@@ -7,6 +7,7 @@ import com.trazia.trazia_project.entity.user.User;
 import com.trazia.trazia_project.service.product.ProductService;
 
 import jakarta.validation.Valid;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
@@ -36,9 +37,7 @@ public class ProductController {
         public ResponseEntity<List<ProductResponse>> listProducts() {
                 // log.info("Listing all products (non-paginated)");
                 List<ProductResponse> products = productService.listProducts();
-                return ResponseEntity.ok()
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .body(products);
+                return ResponseEntity.ok(products);
         }
 
         @PostMapping
@@ -55,7 +54,7 @@ public class ProductController {
                         @RequestParam(defaultValue = "0") int page,
                         @RequestParam(defaultValue = "20") int size,
                         @RequestParam(defaultValue = "createdAt") String sortBy,
-                        @RequestParam(defaultValue = "DESC") String direction,
+                        @RequestParam(defaultValue = "DESC") @NonNull String direction,
                         @AuthenticationPrincipal User user) {
                 log.info("Fetching products for user ID: {}", user.getId());
                 Sort.Direction sortDirection = Sort.Direction.fromString(direction);

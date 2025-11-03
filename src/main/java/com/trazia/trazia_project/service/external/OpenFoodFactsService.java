@@ -6,6 +6,7 @@ import com.trazia.trazia_project.dto.external.openfoodfacts.OpenFoodFactsSearchR
 import com.trazia.trazia_project.exception.product.OpenFoodFactsApiException;
 import com.trazia.trazia_project.exception.product.ProductNotFoundException;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
@@ -31,14 +32,14 @@ public class OpenFoodFactsService {
     @Value("${openfoodfacts.api.retry-delay-seconds:2}")
     private int retryDelaySeconds;
     
-    public OpenFoodFactsService(@Value("${openfoodfacts.api.base-url}") String baseUrl) {
+    public OpenFoodFactsService(@Value("${openfoodfacts.api.url}") @NonNull String baseUrl) {
         // Aumentar límite de buffer a 10 MB
         ExchangeStrategies strategies = ExchangeStrategies.builder()
             .codecs(configurer -> configurer
                 .defaultCodecs()
                 .maxInMemorySize(10 * 1024 * 1024))
             .build();
-        
+
         this.webClient = WebClient.builder()
             .baseUrl(baseUrl)
             .exchangeStrategies(strategies)

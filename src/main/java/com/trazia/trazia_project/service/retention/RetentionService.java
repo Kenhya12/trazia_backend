@@ -9,8 +9,12 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.Getter;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
+
+import jakarta.annotation.PostConstruct;
 
 @Getter
 @Service
@@ -28,18 +32,29 @@ public class RetentionService {
 
     private List<RetentionFactor> retentionFactors;
 
-    // Se inyecta el nombre del archivo desde application.properties
-    public RetentionService(@Value("${retention.config.file:retention-factors.json}") String retentionConfigFile) {
-        loadRetentionFactors(retentionConfigFile);
+    @Autowired
+    private ResourceLoader resourceLoader;
+
+    public RetentionService() {
+        // Constructor vacío, no cargar nada aquí
     }
 
-    private void loadRetentionFactors(String retentionConfigFile) {
+    @PostConstruct
+    private void init() {
+        loadRetentionFactors();
+    }
+
+    private void loadRetentionFactors() {
+        String filePath = "classpath:retention/RetentionFactorConfig.json";
         ObjectMapper mapper = new ObjectMapper();
-        try (InputStream is = getClass().getClassLoader().getResourceAsStream(retentionConfigFile)) {
-            if (is == null) {
-                throw new IllegalArgumentException("Retention config file not found: " + retentionConfigFile);
+        try {
+            Resource resource = resourceLoader.getResource(filePath);
+            if (!resource.exists()) {
+                throw new IllegalArgumentException("Retention config file not found: " + filePath);
             }
-            retentionFactors = mapper.readValue(is, new TypeReference<List<RetentionFactor>>() {});
+            try (InputStream is = resource.getInputStream()) {
+                retentionFactors = mapper.readValue(is, new TypeReference<List<RetentionFactor>>() {});
+            }
         } catch (IOException e) {
             throw new RuntimeException("Error reading retention factors", e);
         }

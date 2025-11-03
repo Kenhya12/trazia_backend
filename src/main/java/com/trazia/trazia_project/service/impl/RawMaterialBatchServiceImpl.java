@@ -6,6 +6,7 @@ import com.trazia.trazia_project.dto.batch.RawMaterialBatchDTO;
 import com.trazia.trazia_project.entity.batch.RawMaterialBatch;
 
 import lombok.RequiredArgsConstructor;
+import lombok.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,18 +24,18 @@ public class RawMaterialBatchServiceImpl implements RawMaterialBatchService {
     }
 
     @Override
-    public RawMaterialBatch saveRawMaterialBatch(RawMaterialBatch batch) {
+    public RawMaterialBatch saveRawMaterialBatch(@NonNull RawMaterialBatch batch) {
         validateBatch(batch);
         return rawMaterialBatchRepository.save(batch);
     }
 
     @Override
-    public RawMaterialBatch save(RawMaterialBatch batch) {
+    public RawMaterialBatch save(@NonNull RawMaterialBatch batch) {
         return rawMaterialBatchRepository.save(batch);
     }
 
     @Override
-    public Optional<RawMaterialBatch> findById(Long id) {
+    public Optional<RawMaterialBatch> findById(@NonNull Long id) {
         return rawMaterialBatchRepository.findById(id);
     }
 

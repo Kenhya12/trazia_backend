@@ -19,7 +19,7 @@ public class JwtTokenProvider {
 
     private static final String SECRET_KEY = "TraziaSecretKeyForJWTTokenGeneration2025MustBeLongEnoughForHS512AlgorithmSecurityPurposes";
     private final SecretKey key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
-    
+
     private static final long JWT_EXPIRATION = 86400000L;
     private static final long REFRESH_EXPIRATION = 604800000L;
 
@@ -80,9 +80,11 @@ public class JwtTokenProvider {
     }
 
     public String getUsernameFromToken(String token) {
-        return "mockUser";
+        try {
+            return extractUsername(token);
+        } catch (Exception e) {
+            log.error("Error extracting username from token: {}", e.getMessage());
+            return null;
+        }
     }
 }
-
-
-

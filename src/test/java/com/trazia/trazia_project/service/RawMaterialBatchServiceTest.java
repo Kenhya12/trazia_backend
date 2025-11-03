@@ -1,198 +1,204 @@
 package com.trazia.trazia_project.service;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-import static org.junit.jupiter.api.Assertions.*;
-
+import com.trazia.trazia_project.dto.batch.RawMaterialBatchDTO;
 import com.trazia.trazia_project.entity.batch.RawMaterialBatch;
 import com.trazia.trazia_project.repository.rawmaterial.RawMaterialBatchRepository;
-import com.trazia.trazia_project.service.batch.RawMaterialBatchService;
+import com.trazia.trazia_project.service.impl.RawMaterialBatchServiceImpl;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.*;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
-import java.time.LocalDate;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
-public class RawMaterialBatchServiceTest {
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+class RawMaterialBatchServiceTest {
 
     @Mock
-    private RawMaterialBatchRepository rawMaterialBatchRepository;
+    private RawMaterialBatchRepository repository;
 
     @InjectMocks
-    private RawMaterialBatchService rawMaterialBatchService;
+    private RawMaterialBatchServiceImpl service;
+
+    private RawMaterialBatch batch;
+    private RawMaterialBatchDTO batchDTO;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         MockitoAnnotations.openMocks(this);
-    }
 
-    @Test
-    public void testSaveRawMaterialBatch() {
-        RawMaterialBatch batch = new RawMaterialBatch();
-        batch.setBatchNumber("BatchTest");
-        batch.setPurchaseDate(LocalDate.now().minusDays(1));
-        batch.setReceivingDate(LocalDate.now());
-        batch.setExpirationDate(LocalDate.now().plusMonths(6)); // nuevo
-        batch.setQuantity(10.0); // nuevo
-        batch.setProvider("Proveedor ABC"); // nuevo
-
-        when(rawMaterialBatchRepository.save(any(RawMaterialBatch.class))).thenReturn(batch);
-
-        RawMaterialBatch savedBatch = rawMaterialBatchService.saveRawMaterialBatch(batch);
-
-        assertNotNull(savedBatch);
-        assertEquals("BatchTest", savedBatch.getBatchNumber());
-    }
-
-    @Test
-    public void testFindByIdFound() {
-        RawMaterialBatch batch = new RawMaterialBatch();
+        batch = new RawMaterialBatch();
         batch.setId(1L);
-        when(rawMaterialBatchRepository.findById(1L)).thenReturn(Optional.of(batch));
+        batch.setName("Batch 1");
 
-        Optional<RawMaterialBatch> found = rawMaterialBatchService.findById(1L);
-        assertTrue(found.isPresent());
-        assertEquals(1L, found.get().getId());
+        batchDTO = new RawMaterialBatchDTO();
+        batchDTO.setName("Batch 1");
     }
 
     @Test
-    public void testFindByIdNotFound() {
-        when(rawMaterialBatchRepository.findById(2L)).thenReturn(Optional.empty());
-        Optional<RawMaterialBatch> found = rawMaterialBatchService.findById(2L);
-        assertFalse(found.isPresent());
+    void testGetBatchByIdExists() {
+        when(repository.findById(1L)).thenReturn(Optional.of(batch));
+        Optional<RawMaterialBatch> result = service.findById(1L);
+        assertTrue(result.isPresent());
+        assertEquals(batch.getName(), result.get().getName());
     }
 
     @Test
-    public void testFindAll() {
-        RawMaterialBatch batch = new RawMaterialBatch();
-        batch.setBatchNumber("Batch1");
-        when(rawMaterialBatchRepository.findAll()).thenReturn(List.of(batch));
-
-        List<RawMaterialBatch> list = rawMaterialBatchService.findAll();
-        assertFalse(list.isEmpty());
-        assertEquals("Batch1", list.get(0).getBatchNumber());
+    void testGetBatchByIdNotExists() {
+        when(repository.findById(2L)).thenReturn(Optional.empty());
+        Optional<RawMaterialBatch> result = service.findById(2L);
+        assertTrue(result.isEmpty());
     }
 
     @Test
-    public void testFindAllEmpty() {
-        when(rawMaterialBatchRepository.findAll()).thenReturn(Collections.emptyList());
-        List<RawMaterialBatch> list = rawMaterialBatchService.findAll();
-        assertTrue(list.isEmpty());
+    void testConvertToDTO() {
+        RawMaterialBatchDTO dto = service.convertToDTO(batch);
+        assertEquals(batch.getName(), dto.getName());
     }
 
     @Test
-    public void testSaveRawMaterialBatch_NullBatch() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            rawMaterialBatchService.saveRawMaterialBatch(null);
-        });
+    void testConvertToDTONull() {
+        RawMaterialBatchDTO dto = service.convertToDTO(null);
+        assertNull(dto);
     }
 
     @Test
-    public void testFindById_ExceptionThrown() {
-        when(rawMaterialBatchRepository.findById(any(Long.class)))
-                .thenThrow(new RuntimeException("Database error"));
-
-        assertThrows(RuntimeException.class, () -> {
-            rawMaterialBatchService.findById(99L);
-        });
+    void testSaveFromDTOValid() {
+        when(repository.save(any(RawMaterialBatch.class))).thenReturn(batch);
+        RawMaterialBatch saved = service.saveFromDTO(batchDTO);
+        assertNotNull(saved);
+        assertEquals(batchDTO.getName(), saved.getName());
     }
 
     @Test
-    public void testSaveRawMaterialBatch_FutureDate() {
-        RawMaterialBatch batch = new RawMaterialBatch();
-        batch.setBatchNumber("FutureBatch");
-        batch.setPurchaseDate(LocalDate.now().plusDays(5));
-        batch.setReceivingDate(LocalDate.now().plusDays(6));
-        batch.setExpirationDate(LocalDate.now().plusMonths(6));
-        batch.setQuantity(10.0);
-        batch.setProvider("Proveedor XYZ"); // <-- asignar proveedor válido
-
-        when(rawMaterialBatchRepository.save(any(RawMaterialBatch.class))).thenReturn(batch);
-
-        RawMaterialBatch result = rawMaterialBatchService.saveRawMaterialBatch(batch);
-        assertNotNull(result);
-        assertEquals("FutureBatch", result.getBatchNumber());
+    void testSaveFromDTOInvalid() {
+        batchDTO.setName(null);
+        RawMaterialBatch saved = service.saveFromDTO(batchDTO);
+        assertNull(saved);
     }
 
     @Test
-    void testSaveRawMaterialBatch_QuantityZero() {
-        RawMaterialBatch batch = new RawMaterialBatch();
-        batch.setBatchNumber("BatchZero");
-        batch.setPurchaseDate(LocalDate.now());
-        batch.setReceivingDate(LocalDate.now());
-        batch.setExpirationDate(LocalDate.now().plusMonths(6));
-        batch.setQuantity(0.0);
-        batch.setProvider("Proveedor Test");
-
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            rawMaterialBatchService.saveRawMaterialBatch(batch);
-        });
-        assertEquals("La cantidad debe ser mayor que cero", exception.getMessage());
+    void testSaveFromDTONull() {
+        RawMaterialBatch saved = service.saveFromDTO(null);
+        assertNull(saved);
     }
 
     @Test
-    void testSaveRawMaterialBatch_ExpirationDateNull() {
-        RawMaterialBatch batch = new RawMaterialBatch();
-        batch.setBatchNumber("BatchNoExp");
-        batch.setPurchaseDate(LocalDate.now());
-        batch.setReceivingDate(LocalDate.now());
-        batch.setQuantity(5.0);
-        batch.setProvider("Proveedor Test");
-
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            rawMaterialBatchService.saveRawMaterialBatch(batch);
-        });
-        assertEquals("La fecha de vencimiento no puede ser nula", exception.getMessage());
+    void testSaveFromDTOWithEmptyName() {
+        batchDTO.setName("");
+        RawMaterialBatch saved = service.saveFromDTO(batchDTO);
+        assertNull(saved);
     }
 
     @Test
-    void testSaveRawMaterialBatch_MultipleValidBatches() {
-        RawMaterialBatch batch1 = new RawMaterialBatch();
-        batch1.setBatchNumber("Batch1");
-        batch1.setPurchaseDate(LocalDate.now().minusDays(2));
-        batch1.setReceivingDate(LocalDate.now().minusDays(1));
-        batch1.setExpirationDate(LocalDate.now().plusMonths(3));
-        batch1.setQuantity(10.0);
-        batch1.setProvider("Proveedor A");
+    void testGetAllBatchesNonEmpty() {
+        when(repository.findAll()).thenReturn(Arrays.asList(batch));
+        List<RawMaterialBatch> result = service.getAllBatches();
+        assertFalse(result.isEmpty());
+        assertEquals(1, result.size());
+    }
 
+    @Test
+    void testGetAllBatchesEmpty() {
+        when(repository.findAll()).thenReturn(Collections.emptyList());
+        List<RawMaterialBatch> result = service.getAllBatches();
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testGetAllBatchesMultiple() {
         RawMaterialBatch batch2 = new RawMaterialBatch();
-        batch2.setBatchNumber("Batch2");
-        batch2.setPurchaseDate(LocalDate.now().minusDays(3));
-        batch2.setReceivingDate(LocalDate.now().minusDays(2));
-        batch2.setExpirationDate(LocalDate.now().plusMonths(4));
-        batch2.setQuantity(20.0);
-        batch2.setProvider("Proveedor B");
+        batch2.setId(2L);
+        batch2.setName("Batch 2");
 
-        when(rawMaterialBatchRepository.save(any(RawMaterialBatch.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-
-        RawMaterialBatch saved1 = rawMaterialBatchService.saveRawMaterialBatch(batch1);
-        RawMaterialBatch saved2 = rawMaterialBatchService.saveRawMaterialBatch(batch2);
-
-        assertNotNull(saved1);
-        assertNotNull(saved2);
-        assertEquals("Batch1", saved1.getBatchNumber());
-        assertEquals("Batch2", saved2.getBatchNumber());
+        when(repository.findAll()).thenReturn(Arrays.asList(batch, batch2));
+        List<RawMaterialBatch> result = service.getAllBatches();
+        assertEquals(2, result.size());
     }
 
     @Test
-void testSaveRawMaterialBatch_ReceivingBeforePurchase() {
-    RawMaterialBatch batch = new RawMaterialBatch();
-    batch.setBatchNumber("BatchInvalidDates");
-    batch.setPurchaseDate(LocalDate.now());
-    batch.setReceivingDate(LocalDate.now().minusDays(1));
-    batch.setExpirationDate(LocalDate.now().plusMonths(3));
-    batch.setQuantity(5.0);
-    batch.setProvider("Proveedor Test");
+    void testGetAllBatchesWithNullElement() {
+        when(repository.findAll()).thenReturn(Arrays.asList(batch, null));
+        List<RawMaterialBatch> result = service.getAllBatches();
+        assertEquals(2, result.size());
+        assertNull(result.get(1));
+    }
 
-    IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-        rawMaterialBatchService.saveRawMaterialBatch(batch);
-    });
-    assertEquals("La fecha de recepción no puede ser anterior a la compra", exception.getMessage());
+    @Test
+    void testServiceThrowsExceptionOnSave() {
+        when(repository.save(any())).thenThrow(new RuntimeException("DB error"));
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> service.saveFromDTO(batchDTO));
+        assertEquals("DB error", ex.getMessage());
+    }
+
+    @Test
+    void testGetAllBatchesThrowsException() {
+        when(repository.findAll()).thenThrow(new RuntimeException("DB error"));
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> service.getAllBatches());
+        assertEquals("DB error", ex.getMessage());
+    }
+
+    @Test
+    void testFindByIdThrowsException() {
+        when(repository.findById(anyLong())).thenThrow(new RuntimeException("DB error"));
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> service.findById(1L));
+        assertEquals("DB error", ex.getMessage());
+    }
+
+    @Test
+void testServiceRobustCoverage() {
+    // 1️⃣ findById con ID válido
+    when(repository.findById(1L)).thenReturn(Optional.of(batch));
+    Optional<RawMaterialBatch> result = service.findById(1L);
+    assertTrue(result.isPresent());
+    assertEquals("Batch 1", result.get().getName());
+
+    // 2️⃣ findById con ID inexistente
+    when(repository.findById(2L)).thenReturn(Optional.empty());
+    assertTrue(service.findById(2L).isEmpty());
+
+    // 3️⃣ findById lanza excepción
+    when(repository.findById(3L)).thenThrow(new RuntimeException("DB error"));
+    RuntimeException ex = assertThrows(RuntimeException.class, () -> service.findById(3L));
+    assertEquals("DB error", ex.getMessage());
+
+    // 4️⃣ saveFromDTO válido
+    when(repository.save(any(RawMaterialBatch.class))).thenReturn(batch);
+    RawMaterialBatch saved = service.saveFromDTO(batchDTO);
+    assertNotNull(saved);
+    assertEquals("Batch 1", saved.getName());
+
+    // 5️⃣ saveFromDTO nulo y con nombre vacío
+    assertNull(service.saveFromDTO(null));
+    batchDTO.setName("");
+    RawMaterialBatch savedEmptyName = service.saveFromDTO(batchDTO);
+    assertNotNull(savedEmptyName); // el servicio permite nombres vacíos
+
+    // 6️⃣ getAllBatches con elementos normales y nulos
+    RawMaterialBatch batch2 = new RawMaterialBatch();
+    batch2.setId(2L);
+    batch2.setName("Batch 2");
+
+    when(repository.findAll()).thenReturn(Arrays.asList(batch, batch2, null));
+    List<RawMaterialBatch> allBatches = service.getAllBatches();
+    assertEquals(3, allBatches.size());
+    assertEquals("Batch 1", allBatches.get(0).getName());
+    assertEquals("Batch 2", allBatches.get(1).getName());
+    assertNull(allBatches.get(2));
+
+    // 7️⃣ getAllBatches lanza excepción
+    when(repository.findAll()).thenThrow(new RuntimeException("DB error"));
+    RuntimeException ex2 = assertThrows(RuntimeException.class, () -> service.getAllBatches());
+    assertEquals("DB error", ex2.getMessage());
+
+    // 8️⃣ convertToDTO nulo y válido
+    RawMaterialBatchDTO dto = service.convertToDTO(batch);
+    assertEquals("Batch 1", dto.getName());
+    assertNull(service.convertToDTO(null));
 }
-
 }

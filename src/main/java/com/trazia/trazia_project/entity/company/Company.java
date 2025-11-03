@@ -33,6 +33,18 @@ public class Company {
     @Column(name = "health_registration")
     private String healthRegistration;
 
+    @Column(name = "comercial_registry")
+    private String comercial_regiString;
+
+    @Column(name = "phone", nullable = false, unique = true)
+    private String phone;
+
+    @Column(name = "email", nullable = false)
+    private String email;
+
+    @Column(name = "website")
+    private String website;
+
     @Lob
     @Column(name = "logo")
     private byte[] logo;

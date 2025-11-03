@@ -86,6 +86,12 @@ public class RawMaterialBatch {
     private List<Document> documents;
 
     /**
+     * Comentarios u observaciones sobre el lote.
+     */
+    @Column(name = "comments")
+    private String comments;
+
+    /**
      * Setter auxiliar para compatibilidad con tests que usan 'setProvider'.
      * Permite establecer el nombre del proveedor directamente.
      * @param providerName nombre del proveedor a establecer en el objeto supplier.
