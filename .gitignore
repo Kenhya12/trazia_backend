@@ -62,7 +62,10 @@ build/
 ## OS X
 ##############################
 .DS_Store
+<<<<<<< HEAD
 Thumbs.db
+=======
+>>>>>>> b76fde67890ea30995a4fbb96b2484ac7731abd8
 
 ##############################
 ## Miscellaneous
@@ -84,6 +87,7 @@ tmp/
 *~.nib
 local.properties
 .loadpath
+<<<<<<< HEAD
 .factorypath
 
 ##############################
@@ -94,3 +98,6 @@ local.properties
 *.swp
 *~
 EOF
+=======
+.factorypath
+>>>>>>> b76fde67890ea30995a4fbb96b2484ac7731abd8
