@@ -28,7 +28,6 @@ dependency-reduced-pom.xml
 buildNumber.properties
 .mvn/timing.properties
 .mvn/wrapper/maven-wrapper.jar
-.DS_Store
 
 ### STS ###
 .apt_generated
@@ -63,7 +62,6 @@ build/
 ## OS X
 ##############################
 .DS_Store
-Thumbs.db
 
 ##############################
 ## Miscellaneous
@@ -86,12 +84,3 @@ tmp/
 local.properties
 .loadpath
 .factorypath
-
-##############################
-## Temp
-##############################
-*.tmp
-*.bak
-*.swp
-*~
-EOF
