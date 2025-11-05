@@ -14,8 +14,8 @@ import com.trazia.trazia_project.entity.batch.RawMaterialBatch;
 public class RawMaterialBatchDTO {
     
     private Long id;
-    private Long supplierId;
-    private Long rawMaterialId;
+    private String supplierId;
+    private String rawMaterialId;
     private String supplierName;
     private String invoiceNumber;
     private String batchNumber;
@@ -28,7 +28,7 @@ public class RawMaterialBatchDTO {
     private String comments;
     private List<DocumentDTO> documents;
     
-    // Constructor desde entidad
+     // Constructor desde entidad
     public RawMaterialBatchDTO(RawMaterialBatch batch) {
         this.id = batch.getId();
         this.batchNumber = batch.getBatchNumber();
@@ -36,7 +36,7 @@ public class RawMaterialBatchDTO {
         this.expirationDate = batch.getExpirationDate();
         this.receivingDate = batch.getReceivingDate();
         this.supplierName = batch.getSupplier() != null ? batch.getSupplier().getName() : null;
-        this.supplierId = batch.getSupplier() != null ? batch.getSupplier().getId() : null;
+        this.supplierId = batch.getSupplier() != null ? String.valueOf(batch.getSupplier().getId()) : null;
         this.comments = batch.getComments();
         this.name = batch.getName();
         this.unit = batch.getUnit();

@@ -12,6 +12,8 @@ public interface RawMaterialBatchService {
     RawMaterialBatch save(RawMaterialBatch batch);
     Optional<RawMaterialBatch> findById(Long id);
     List<RawMaterialBatch> findAll();
-    RawMaterialBatchDTO convertToDTO(RawMaterialBatch batch); // <--- Agregar aquí
+    RawMaterialBatchDTO convertToDTO(RawMaterialBatch batch);
     RawMaterialBatch saveFromDTO(RawMaterialBatchDTO dto);
+    RawMaterialBatch convertToEntity(RawMaterialBatchDTO dto);
+    boolean existsById(Long id); 
 }

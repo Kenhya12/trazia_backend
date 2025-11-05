@@ -6,9 +6,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import java.util.List;
 
 import com.trazia.trazia_project.repository.user.UserRepository;
 
@@ -22,13 +19,17 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         log.debug("Loading user by username/email: {}", username);
-        
+
+        // Primero intentar por email
         com.trazia.trazia_project.entity.user.User appUser = userRepository.findByEmail(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
-        
-        return User.withUsername(appUser.getEmail())
-                .password(appUser.getPassword())
-                .authorities(List.of(new SimpleGrantedAuthority("ROLE_USER")))
-                .build();
+                .orElseGet(() -> {
+                    // Si no encuentra por email, intentar por username
+                    log.debug("User not found by email '{}', trying by username", username);
+                    return userRepository.findByUsername(username)
+                            .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+                });
+
+        log.debug("User found: {} (email: {})", appUser.getUsername(), appUser.getEmail());
+        return appUser;
     }
 }

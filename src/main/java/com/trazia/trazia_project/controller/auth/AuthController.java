@@ -36,6 +36,7 @@ public class AuthController {
         log.info("Login attempt for email: {}", request.getEmail());
         AuthResponse response = authService.login(request);
         log.info("User logged in successfully: {}", request.getEmail());
+        log.info("🔐 Token generated for frontend: {}", response.getToken()); // ← LOG AGREGADO
         return ResponseEntity.ok(response);
     }
 }

@@ -1,6 +1,7 @@
 package com.trazia.trazia_project.controller.recipe;
 
 import com.trazia.trazia_project.dto.recipe.*;
+import com.trazia.trazia_project.entity.user.User;
 import com.trazia.trazia_project.service.recipe.RecipeService;
 
 import jakarta.validation.Valid;
@@ -24,9 +25,9 @@ public class RecipeController {
     @PostMapping
     public ResponseEntity<RecipeResponse> createRecipe(
             @Valid @RequestBody RecipeRequest request,
-            @AuthenticationPrincipal(expression = "id") Long userId) {
+            @AuthenticationPrincipal User principalUser) {
 
-        RecipeResponse createdRecipe = recipeService.createRecipe(request, userId);
+        RecipeResponse createdRecipe = recipeService.createRecipe(request, principalUser.getId());
         return ResponseEntity.ok(createdRecipe);
     }
 
@@ -34,9 +35,9 @@ public class RecipeController {
     @GetMapping("/{id}")
     public ResponseEntity<RecipeResponse> getRecipeById(
             @PathVariable Long id,
-            @AuthenticationPrincipal(expression = "id") Long userId) {
+            @AuthenticationPrincipal User principalUser) {
 
-        RecipeResponse recipe = recipeService.getRecipeById(id, userId);
+        RecipeResponse recipe = recipeService.getRecipeById(id, principalUser.getId());
         return ResponseEntity.ok(recipe);
     }
 
@@ -45,9 +46,9 @@ public class RecipeController {
     public ResponseEntity<RecipePageResponse> getAllRecipes(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @AuthenticationPrincipal(expression = "id") Long userId) {
+            @AuthenticationPrincipal User principalUser) {
 
-        RecipePageResponse pageResponse = recipeService.getAllRecipes(userId, PageRequest.of(page, size));
+        RecipePageResponse pageResponse = recipeService.getAllRecipes(principalUser.getId(), PageRequest.of(page, size));
         return ResponseEntity.ok(pageResponse);
     }
 
@@ -56,9 +57,9 @@ public class RecipeController {
     public ResponseEntity<RecipeResponse> updateRecipe(
             @PathVariable Long id,
             @Valid @RequestBody RecipeRequest request,
-            @AuthenticationPrincipal(expression = "id") Long userId) {
+            @AuthenticationPrincipal User principalUser) {
 
-        RecipeResponse updated = recipeService.updateRecipe(id, request, userId);
+        RecipeResponse updated = recipeService.updateRecipe(id, request, principalUser.getId());
         return ResponseEntity.ok(updated);
     }
 
@@ -66,9 +67,9 @@ public class RecipeController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteRecipe(
             @PathVariable Long id,
-            @AuthenticationPrincipal(expression = "id") Long userId) {
+            @AuthenticationPrincipal User principalUser) {
 
-        recipeService.deleteRecipe(id, userId);
+        recipeService.deleteRecipe(id, principalUser.getId());
         return ResponseEntity.noContent().build();
     }
 
@@ -76,17 +77,16 @@ public class RecipeController {
     @GetMapping("/{id}/label")
     public ResponseEntity<LabelPrintDTO> getRecipeLabel(
             @PathVariable Long id,
-            @AuthenticationPrincipal(expression = "id") Long userId) {
+            @AuthenticationPrincipal User principalUser) {
 
         try {
-            // Cambiado generatePrintLabel -> generateLabel
-            LabelPrintDTO label = recipeService.generateLabel(id, userId);
+            LabelPrintDTO label = recipeService.generateLabel(id, principalUser.getId());
             return ResponseEntity.ok(label);
         } catch (com.trazia.trazia_project.exception.recipe.ResourceNotFoundException e) {
-            logger.warn("Recipe not found for label generation: id={}, userId={}", id, userId);
+            logger.warn("Recipe not found for label generation: id={}, userId={}", id, principalUser.getId());
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
-            logger.error("Error generating label for recipe id={}, userId={}", id, userId, e);
+            logger.error("Error generating label for recipe id={}, userId={}", id, principalUser.getId(), e);
             return ResponseEntity.status(500).build();
         }
     }

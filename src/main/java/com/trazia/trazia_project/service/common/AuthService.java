@@ -17,7 +17,6 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.ArrayList;
 import java.util.Objects;
 
 @Service
@@ -30,6 +29,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
+    private final com.trazia.trazia_project.service.security.UserDetailsServiceImpl userDetailsService; // ← AGREGAR
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -58,11 +58,9 @@ public class AuthService {
 
         log.info("User registered successfully with email: {}", savedUser.getEmail());
 
-        org.springframework.security.core.userdetails.UserDetails userDetails = org.springframework.security.core.userdetails.User
-                .withUsername(savedUser.getEmail())
-                .password(savedUser.getPassword())
-                .authorities(new ArrayList<>())
-                .build();
+        // ✅ USAR UserDetailsServiceImpl para obtener el UserDetails correcto
+        org.springframework.security.core.userdetails.UserDetails userDetails = 
+            userDetailsService.loadUserByUsername(savedUser.getEmail());
 
         return buildAuthResponse(userDetails, savedUser);
     }
@@ -78,10 +76,14 @@ public class AuthService {
                     new UsernamePasswordAuthenticationToken(
                             request.getEmail(),
                             request.getPassword()));
-            org.springframework.security.core.userdetails.UserDetails userDetails = (org.springframework.security.core.userdetails.UserDetails) authentication
-                    .getPrincipal();
+            
+            // ✅ El authentication.getPrincipal() ya es tu entidad User personalizada
+            org.springframework.security.core.userdetails.UserDetails userDetails = 
+                (org.springframework.security.core.userdetails.UserDetails) authentication.getPrincipal();
 
             log.info("User authenticated successfully: {}", user.getEmail());
+            log.info("🔐 UserDetails type: {}", userDetails.getClass().getName());
+            log.info("🔐 UserDetails username: {}", userDetails.getUsername());
 
             return buildAuthResponse(userDetails, user);
 
@@ -94,11 +96,15 @@ public class AuthService {
     private AuthResponse buildAuthResponse(
             @NonNull org.springframework.security.core.userdetails.UserDetails userDetails, @NonNull User user) {
         String token = jwtTokenProvider.generateToken(userDetails);
+        log.info("🔐 TOKEN GENERATION DEBUG:");
+        log.info("🔐   UserDetails type: {}", userDetails.getClass().getName());
+        log.info("🔐   UserDetails username: '{}'", userDetails.getUsername());
+        log.info("🔐   Generated token: {}", token);
         return AuthResponse.builder()
                 .token(token)
                 .username(user.getUsername())
                 .email(user.getEmail())
-                .enabled(user.isEnabled()) // Assuming enabled is part of AuthResponse now
+                .enabled(user.isEnabled())
                 .build();
     }
 }

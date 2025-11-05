@@ -19,7 +19,6 @@ public class RecipeIngredientResponse {
      * ID del ingrediente
      */
     private Long id;
-
     /**
      * Información del producto usado como ingrediente
      */
