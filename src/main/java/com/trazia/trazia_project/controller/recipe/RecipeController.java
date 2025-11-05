@@ -3,6 +3,7 @@ package com.trazia.trazia_project.controller.recipe;
 import com.trazia.trazia_project.dto.recipe.*;
 import com.trazia.trazia_project.entity.user.User;
 import com.trazia.trazia_project.service.recipe.RecipeService;
+import com.trazia.trazia_project.dto.product.LabelPrintDTO;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

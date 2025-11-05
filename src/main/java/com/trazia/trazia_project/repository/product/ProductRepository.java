@@ -55,6 +55,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
         Optional<Product> findByIdAndUserId(Long id, Long userId);
 
+        Optional<Product> findByNameIgnoreCase(String name);
+
         @Query("SELECT p FROM Product p WHERE (LOWER(p.name) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR LOWER(p.brand) LIKE LOWER(CONCAT('%', :searchTerm, '%'))) AND p.user.id = :userId")
         Page<Product> searchByNameOrBrand(@Param("searchTerm") String searchTerm, @Param("userId") Long userId, Pageable pageable);
 }

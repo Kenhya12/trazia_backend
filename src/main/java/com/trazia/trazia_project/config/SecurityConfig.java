@@ -38,6 +38,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/auth/**",
+                                "/api/companies/**",
+                                "/error",
                                 "/h2-console/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
@@ -45,6 +47,8 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/api/raw-material-batches/**",
                                 "/api/suppliers/**",
+                                "/api/recipes/**",
+                                "/api/labels/**",
                                 "/webjars/**")
                         .permitAll()
                         .requestMatchers("/api/raw-material-batches/**", "/api/suppliers/**").permitAll()

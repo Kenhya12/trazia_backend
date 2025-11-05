@@ -25,6 +25,11 @@ public class RecipeIngredientRequest {
     private Long productId;
 
     /**
+     * Nombre del producto (opcional - se puede usar productId en su lugar)
+     */
+    private String name;
+
+    /**
      * Cantidad del producto a usar (en gramos)
      */
     @NotNull(message = "La cantidad es obligatoria")

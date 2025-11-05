@@ -4,8 +4,11 @@ import org.springframework.lang.NonNull;
 
 import com.trazia.trazia_project.dto.product.ProductDTO;
 import com.trazia.trazia_project.dto.recipe.*;
+import com.trazia.trazia_project.dto.recipe.RecipeIngredientRequest;
+import com.trazia.trazia_project.dto.product.LabelPrintDTO;
 import com.trazia.trazia_project.entity.batch.FinalProductLot;
 import com.trazia.trazia_project.entity.product.Product;
+import com.trazia.trazia_project.entity.product.ProductCategory;
 import com.trazia.trazia_project.entity.recipe.Recipe;
 import com.trazia.trazia_project.entity.recipe.RecipeIngredient;
 import com.trazia.trazia_project.entity.user.User;
@@ -47,8 +50,6 @@ public class RecipeServiceImpl implements RecipeService {
     private final ProductMapper productMapper;
     private final NutritionConversionService nutritionConversionService;
 
-    // Resto de la clase...
-
     // ===========================
     // PUBLIC CRUD METHODS
     // ===========================
@@ -60,7 +61,7 @@ public class RecipeServiceImpl implements RecipeService {
         log.info("Creating recipe '{}' for user {}", request.getName(), userId);
         Recipe recipe = Objects.requireNonNull(buildRecipeEntity(request, userId), "Recipe cannot be null");
         recipe = recipeRepository.save(recipe);
-        List<RecipeIngredient> ingredients = createIngredientsFromRequest(recipe, request.getIngredients());
+        List<RecipeIngredient> ingredients = createIngredientsFromRequest(recipe, request.getIngredients(), userId);
         recipe.setIngredients(ingredients);
 
         // HU 5.1: compute and store nutriments per 100g for later use
@@ -112,13 +113,13 @@ public class RecipeServiceImpl implements RecipeService {
         recipe.setName(request.getName());
         recipe.setDescription(request.getDescription());
         recipe.setYieldWeightGrams(request.getYieldWeightGrams() != null
-                ? BigDecimal.valueOf(request.getYieldWeightGrams())
+                ? request.getYieldWeightGrams()
                 : BigDecimal.ZERO);
         recipe.setUpdatedAt(LocalDateTime.now());
 
         // replace ingredients
         recipeIngredientRepository.deleteByRecipeId(recipeId);
-        List<RecipeIngredient> newIngredients = createIngredientsFromRequest(recipe, request.getIngredients());
+        List<RecipeIngredient> newIngredients = createIngredientsFromRequest(recipe, request.getIngredients(), userId);
         recipe.setIngredients(newIngredients);
 
         calculatePerServing(recipe);
@@ -140,21 +141,6 @@ public class RecipeServiceImpl implements RecipeService {
 
     /**
      * Calculates and stores in Recipe entity the nutrients per 100g.
-     *
-     * <p>
-     * <b>BigDecimal vs Double Usage:</b>
-     * <ul>
-     * <li>All weight and cost calculations are performed using {@code BigDecimal}
-     * to maintain precision, especially important for financial and nutritional
-     * data. BigDecimal avoids rounding errors and loss of precision common with
-     * floating-point arithmetic (Double).</li>
-     * <li>{@code Double} is used only when required for compatibility with external
-     * services (e.g., nutritionConversionService) or DTOs that require double
-     * values.</li>
-     * <li>Conversion from {@code BigDecimal} to {@code Double} is done as late as
-     * possible to preserve accuracy throughout calculations.</li>
-     * </ul>
-     * </p>
      */
     @Override
     public void calculatePerServing(Recipe recipe) {
@@ -192,20 +178,6 @@ public class RecipeServiceImpl implements RecipeService {
     /**
      * Returns % of Daily Value for received nutrients.
      * Ensures it never returns null, even if nutrients are null or incomplete.
-     *
-     * <p>
-     * <b>Null-check and Optional validation:</b>
-     * <ul>
-     * <li>Checks if the input {@code nutriments} object is null and returns an
-     * empty DTO if so.</li>
-     * <li>Each property of the {@code nutriments} object is validated using
-     * {@code Optional.ofNullable(...).orElse(0.0)}
-     * to ensure no field is left as null, preventing potential
-     * {@code NullPointerException} in downstream calculations.</li>
-     * <li>Wraps the conversion in a try-catch to handle any unexpected errors,
-     * always returning a non-null result.</li>
-     * </ul>
-     * </p>
      */
     @Override
     public NutrimentsDTO calculateDailyValue(NutrimentsDTO nutriments) {
@@ -242,24 +214,6 @@ public class RecipeServiceImpl implements RecipeService {
      * Returns a formatted string with ingredients, ordered by quantity descending
      * and includes allergens.
      * T 5.3.2
-     *
-     * <p>
-     * <b>Allergen Handling and Quantity Sorting:</b>
-     * <ul>
-     * <li>Ingredients are sorted in descending order by quantity (in grams) using
-     * BigDecimal
-     * to ensure the most abundant ingredients appear first, as required by labeling
-     * standards.</li>
-     * <li>For each ingredient, if the associated product has allergens (non-empty
-     * list), these are
-     * appended in parentheses after the ingredient name, e.g., "Flour - 100g
-     * (Allergens: gluten)".</li>
-     * <li>If no allergens are present, the ingredient is listed without the
-     * allergen note.</li>
-     * <li>Null checks are performed throughout to prevent NPEs for missing
-     * products, names, quantities, or allergens.</li>
-     * </ul>
-     * </p>
      */
     @Override
     public String formatIngredientsList(Recipe recipe) {
@@ -356,25 +310,34 @@ public class RecipeServiceImpl implements RecipeService {
                 .name(request.getName())
                 .description(request.getDescription())
                 .yieldWeightGrams(
-                        request.getYieldWeightGrams() != null ? BigDecimal.valueOf(request.getYieldWeightGrams())
-                                : BigDecimal.ZERO)
+                        request.getYieldWeightGrams() != null ? request.getYieldWeightGrams() : BigDecimal.ZERO)
                 .user(User.builder().id(userId).build())
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
     }
 
-    private List<RecipeIngredient> createIngredientsFromRequest(@NonNull Recipe recipe, List<RecipeIngredientRequest> reqs) {
+    private List<RecipeIngredient> createIngredientsFromRequest(@NonNull Recipe recipe, List<RecipeIngredientRequest> reqs, Long userId) {
         if (reqs == null || reqs.isEmpty())
             return List.of();
 
         List<RecipeIngredient> list = new ArrayList<>();
         for (int i = 0; i < reqs.size(); i++) {
             RecipeIngredientRequest r = reqs.get(i);
-            Long productId = Objects.requireNonNull(r.getProductId(), "Product ID cannot be null");
-            Product product = productRepository.findById(productId)
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Product not found with id: " + productId));
+            
+            // ✅ ACEPTAR ingredientes por productId O por name
+            Product product;
+            if (r.getProductId() != null) {
+                // Usar productId si está disponible
+                product = productRepository.findById(r.getProductId())
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                "Product not found with id: " + r.getProductId()));
+            } else if (r.getName() != null && !r.getName().trim().isEmpty()) {
+                // ✅ ACEPTAR ingredientes por nombre
+                product = findOrCreateProductByName(r.getName().trim(), userId);
+            } else {
+                throw new IllegalArgumentException("Ingredient must have either productId or name");
+            }
 
             Integer displayOrder = r.getDisplayOrder() != null ? r.getDisplayOrder() : i;
             RecipeIngredient ingredient = RecipeIngredient.builder()
@@ -391,6 +354,32 @@ public class RecipeServiceImpl implements RecipeService {
             list.add(saved);
         }
         return list;
+    }
+
+    /**
+     * Busca producto por nombre o crea uno nuevo si no existe
+     */
+    private Product findOrCreateProductByName(String productName, Long userId) {
+        // Buscar producto existente por nombre (case insensitive)
+        Optional<Product> existingProduct = productRepository.findByNameIgnoreCase(productName);
+        
+        if (existingProduct.isPresent()) {
+            return existingProduct.get();
+        }
+        
+        // Crear nuevo producto con todos los campos obligatorios
+        Product newProduct = Product.builder()
+                .name(productName)
+                .costPerUnit(BigDecimal.valueOf(0.01)) // ✅ Mayor que 0.0
+                .category(ProductCategory.OTHER) // ✅ Categoría no nula
+                .description("Ingrediente de receta: " + productName) // ✅ Descripción
+                .servingSizeGrams(100) // ✅ Integer, no Double
+                .servingDescription("Porción de 100g") // ✅ Descripción de porción
+                .user(User.builder().id(userId).build()) // ✅ USER_ID obligatorio
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+        return productRepository.save(newProduct);
     }
 
     private RecipeResponse buildRecipeResponse(Recipe recipe) {
@@ -415,7 +404,6 @@ public class RecipeServiceImpl implements RecipeService {
             costPerGram = totalCost.divide(yieldWeight, 6, RoundingMode.HALF_UP);
             costPer100g = costPerGram.multiply(BigDecimal.valueOf(100)).setScale(6, RoundingMode.HALF_UP);
         }
-        BigDecimal yieldLossPercentage = calculateYieldLossPercentage(totalIngredientsWeight, yieldWeight);
 
         List<RecipeIngredientResponse> ingredientResponses = recipe.getIngredients().stream()
                 .sorted(Comparator.comparing(RecipeIngredient::getDisplayOrder))
@@ -426,17 +414,13 @@ public class RecipeServiceImpl implements RecipeService {
                 .id(recipe.getId())
                 .name(recipe.getName())
                 .description(recipe.getDescription())
-                .yieldWeightGrams(yieldWeight != null ? yieldWeight.doubleValue() : 0.0)
+                .yieldWeightGrams(yieldWeight != null ? yieldWeight : BigDecimal.ZERO)
                 .ingredients(ingredientResponses)
-                .totalCost(totalCost.doubleValue())
-                .costPerGram(costPerGram.doubleValue())
-                .costPer100g(costPer100g.doubleValue())
-                .totalIngredientsWeight(totalIngredientsWeight.doubleValue())
-                .yieldLossPercentage(yieldLossPercentage.doubleValue())
-                .calculatedNutrition(nutritionPer100g)
+                .totalCost(totalCost != null ? totalCost : BigDecimal.ZERO)
+                .costPer100g(costPer100g != null ? costPer100g : BigDecimal.ZERO)
+                .calculatedNutrition(recipe.getNutrimentsPor100g())
                 .createdAt(recipe.getCreatedAt())
                 .updatedAt(recipe.getUpdatedAt())
-                .userId(recipe.getUser() != null ? recipe.getUser().getId() : null)
                 .build();
     }
 
@@ -489,19 +473,22 @@ public class RecipeServiceImpl implements RecipeService {
             BigDecimal totalIngredientsWeight, BigDecimal totalCost) {
         ProductDTO productDTO = productMapper.toProductDTO(ingredient.getProduct());
         BigDecimal ingredientCost = calculateIngredientCost(ingredient);
-        BigDecimal percentageOfTotal = BigDecimal.ZERO;
-        if (totalIngredientsWeight != null && totalIngredientsWeight.compareTo(BigDecimal.ZERO) != 0) {
-            percentageOfTotal = ingredient.getQuantityGrams().multiply(BigDecimal.valueOf(100))
+        
+        // Calcular porcentaje
+        Double percentageOfTotal = 0.0;
+        if (totalIngredientsWeight != null && totalIngredientsWeight.compareTo(BigDecimal.ZERO) != 0 
+            && ingredient.getQuantityGrams() != null) {
+            BigDecimal percentage = ingredient.getQuantityGrams().multiply(BigDecimal.valueOf(100))
                     .divide(totalIngredientsWeight, 6, RoundingMode.HALF_UP);
+            percentageOfTotal = percentage.doubleValue();
         }
 
         return RecipeIngredientResponse.builder()
                 .id(ingredient.getId())
                 .product(productDTO)
-                .quantityGrams(
-                        ingredient.getQuantityGrams() != null ? ingredient.getQuantityGrams().doubleValue() : 0.0)
-                .percentageOfTotal(percentageOfTotal.doubleValue())
-                .cost(ingredientCost.doubleValue())
+                .quantityGrams(ingredient.getQuantityGrams() != null ? ingredient.getQuantityGrams().doubleValue() : 0.0)
+                .percentageOfTotal(percentageOfTotal)
+                .cost(ingredientCost != null ? ingredientCost.doubleValue() : 0.0)
                 .build();
     }
 
@@ -554,13 +541,23 @@ public class RecipeServiceImpl implements RecipeService {
             nutrition = buildEmptyNutriments();
         }
 
+        BigDecimal totalCost = calculateTotalCost(recipe);
+        BigDecimal costPer100g = BigDecimal.ZERO;
+        if (recipe.getYieldWeightGrams() != null && recipe.getYieldWeightGrams().compareTo(BigDecimal.ZERO) != 0) {
+            costPer100g = totalCost.divide(recipe.getYieldWeightGrams(), 6, RoundingMode.HALF_UP)
+                    .multiply(BigDecimal.valueOf(100));
+        }
+
         return RecipeSummaryResponse.builder()
                 .id(recipe.getId())
                 .name(recipe.getName())
-                .yieldWeightGrams(recipe.getYieldWeightGrams() != null
-                        ? recipe.getYieldWeightGrams().doubleValue()
-                        : 0.0)
+                .yieldWeightGrams(recipe.getYieldWeightGrams() != null ? recipe.getYieldWeightGrams().doubleValue() : 0.0)
+                .totalCost(totalCost != null ? totalCost.doubleValue() : 0.0)
+                .costPer100g(costPer100g != null ? costPer100g.doubleValue() : 0.0)
+                .ingredientCount(recipe.getIngredients() != null ? recipe.getIngredients().size() : 0)
                 .calculatedCalories(nutrition != null ? nutrition.getCalories() : 0.0)
+                .createdAt(recipe.getCreatedAt())
+                .updatedAt(recipe.getUpdatedAt())
                 .build();
     }
 
@@ -583,28 +580,6 @@ public class RecipeServiceImpl implements RecipeService {
      * types.
      * If includeAllergensAndLot is true, fills allergens, usage instructions,
      * batch, expiry.
-     *
-     * <p>
-     * <b>Required Setters in LabelPrintDTO:</b>
-     * <ul>
-     * <li>{@code setRecipeName} - Recipe name (required)</li>
-     * <li>{@code setRecipeDescription} - Recipe description (required)</li>
-     * <li>{@code setYieldWeightGrams} - Yield weight (required, never null)</li>
-     * <li>{@code setLegalDisclaimer} - Legal disclaimer (required)</li>
-     * <li>{@code setEnergyPer100g}, {@code setProteinPer100g}, ... - Nutritional
-     * info (required, always set even if zero)</li>
-     * <li>{@code setIngredientsList} - Formatted list of ingredients
-     * (required)</li>
-     * <li>{@code setAllergens} - List of allergens (required if
-     * includeAllergensAndLot is true)</li>
-     * <li>{@code setUsageInstructions} - Usage instructions (required if
-     * includeAllergensAndLot is true)</li>
-     * <li>{@code setBatchNumber} - Batch number (required if includeAllergensAndLot
-     * is true)</li>
-     * <li>{@code setExpiryDate} - Expiry date (required if includeAllergensAndLot
-     * is true)</li>
-     * </ul>
-     * </p>
      */
     private LabelPrintDTO buildLabelPrintDTO(Recipe recipe, boolean includeAllergensAndLot) {
         LabelPrintDTO label = new LabelPrintDTO();

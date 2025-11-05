@@ -61,7 +61,7 @@ public class RecipeSummaryResponse {
      */
     private LocalDateTime updatedAt;
 
-        /**
+    /**
      * Calorías calculadas por 100g de la receta
      */
     private Double calculatedCalories;
